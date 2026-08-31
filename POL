@@ -1,0 +1,32 @@
+# POL-REPO-001
+
+## 1 – Alcance
+Esta política es de cumplimiento obligatorio y aplica a todos los repositorios de códigos productivo, preproductivo (ya sea en entornos de desarrollo, QA, staging) y de infraestructura como código de la organización.
+
+## 2 – Roles
+- **Developer:** Alexander Ruiz-Tagle
+- **Reviewer:** Valentina Leon
+- **Code owner:** Nelson Arevalo
+- **Release Manager:** Sebastian Chacon 
+- **Secret custodian:** Martin Jara
+
+## 3 – Reglas técnicas obligatorias
+- **Autentificación:** Uso de la plataforma con MFA habilitado de manera obligatoria.
+- **Protección de las ramas:** La rama principal (main) es inmutable por lo cual quedan prohibidos los push directos y el uso de comandos que puedan destruir el código como el `--force`.
+- **Flujo de integración:** Todo cambio se debe ingresar obligatoriamente a través de un pull request que contenga al menos 1 aprobación de un par.
+- **Trazabilidad:** Todo commit que sea incorporado debe ser firmado digitalmente mediante llaves de GPG (firma virtual) asociadas al perfil de usuario.
+- **Escaneo:** Inspección automatizada de secretos bloqueante en cada evento de push o integración.
+- **Revisión de estado obligatorias:** Bloquear el merge si las pruebas automatizadas fallan en el servidor de CI.
+
+## 4 – Matriz ¿Quién puede qué?
+
+| Pregunta/Acción | ¿Quién puede ejecutarlo? | Restricciones y controles aplicados |
+|---|---|---|
+| **Q1 ¿Quién puede hacer el merge?** | Reviewers y Code owner | Requiere de una revisión automatizada limpia y mínimo 1 aprobación humana |
+| **Q2 ¿Quién puede modificar pipelines?** | Code owners de seguridad y secret custodian | La ruta requiere de la aprobación obligatoria y explícita del líder de seguridad para mitigar los workflows maliciosos |
+| **Q3 ¿Quién puede crear releases?** | Únicamente el release manager | Solo se pueden generar releases sobre commits del main que posean tags y trazabilidad |
+| **Q4 ¿Quién puede modificar secretos?** | Solamente el secret custodian | Es restringido por la política de privilegio mínimo |
+
+## 5 – Excepciones y revisión
+
+**Procedimientos de Emergencia:** Ante incidentes críticos de producción (caídas o vulnerabilidades críticas que sean detectadas), el líder de seguridad o el release manager podrán omitir las restricciones de la aprobación del PR. No obstante, el pipeline ejecutará los escaneos automatizados.
