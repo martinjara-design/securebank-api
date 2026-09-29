@@ -3,8 +3,8 @@
 
 [![CI](https://github.com/<ORG>/securebank-api/actions/workflows/ci.yml/badge.svg)](https://github.com/<ORG>/securebank-api/actions/workflows/ci.yml)
 
-> Reemplaza `<ORG>` por tu organización/usuario de GitHub al subir el
-> repo — el badge se activa solo tras el primer push a `main`.
+
+
 
 Proyecto transversal del curso **Sistemas Automatizados DevSecOps**
 (UBO · Ingeniería Informática). SecureBank API es una API REST
