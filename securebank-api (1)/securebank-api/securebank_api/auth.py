@@ -7,10 +7,7 @@ Controles implementados (mapeados a docs/threat-model.md):
     (amenaza #02, Spoofing / #11, Elevation of Privilege).
   - Rate limiting por IP+usuario sobre /login (amenaza #08, DoS).
 
-Nota de producción: este laboratorio firma los JWT con HS256 y un
-secreto de entorno para simplicidad didáctica. El control objetivo
-descrito en el Threat Model es RS256 con rotación de claves; migrar
-a RS256 solo cambia esta función y no el resto de la aplicación.
+
 """
 import os
 import time
