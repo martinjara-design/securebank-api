@@ -1,19 +1,18 @@
-# Secretos y credenciales
+
+!.env.example
+*.egg-info/
+*.key
+*.pem
+*.pyc
+.coverage
 .env
 .env.*
-!.env.example
-*.pem
-*.key
-*.p12
-*.pfx
-id_rsa*
-credentials*.json
-
-# Python
-__pycache__/
-*.py[cod]
-.venv/
 .pytest_cache/
-.coverage
-sast.sarif
-gitleaks-report.sarif
+.venv/
+__pycache__/
+coverage.xml
+credentials.json
+dist/
+id_rsa*
+test-results.xml
+venv/

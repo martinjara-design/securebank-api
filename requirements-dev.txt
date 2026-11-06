@@ -1,5 +1,3 @@
 -r requirements.txt
 pytest==8.3.3
 pytest-cov==5.0.0
-# semgrep==1.86.0 y pip-audit==2.10.1 se instalan en jobs separados del CI
-# (juntos tienen dependencias en conflicto). Local: pip install semgrep==1.86.0

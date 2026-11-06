@@ -3,7 +3,7 @@
 **Proyecto:** SecurePipeline · UBO Ingeniería Informática · Sistemas Automatizados DevSecOps
 **Entregable de:** Sesión 03 — Threat Modeling y Requisitos de Seguridad
 **Formato de entrega:** tabla en Markdown · DFD anexo · una security story por cada amenaza (ver `security-stories.md`)
-**Fecha de próxima revisión:** al cierre de cada sesión del curso, cuando el pipeline incorpora una capa nueva de seguridad (SAST → Sesión 5, SCA → Sesión 6, DAST → Sesión 7).
+**Fecha de próxima revisión:** al cierre de cada sesión del curso, cuando el pipeline incorpora una capa nueva de seguridad (SAST → Sesión 5, SCA → Sesión 6, DAST → Sesión 8).
 
 ## 1. Contexto
 
