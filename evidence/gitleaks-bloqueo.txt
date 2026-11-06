@@ -1,0 +1,40 @@
+Finding:     GH = "REDACTED
+Secret:      REDACTED
+RuleID:      github-pat
+Entropy:     4.734184
+File:        app_config.py
+Line:        3
+Commit:      e1462a3f2a65f8410e146d85adbf324570dfd565
+Author:      test
+Email:       a@b.c
+Date:        2026-11-05T01:26:36Z
+Fingerprint: e1462a3f2a65f8410e146d85adbf324570dfd565:app_config.py:github-pat:3
+
+Finding:     SECUREBANK_REDACTED=Universidad2026xyz
+Secret:      REDACTED
+RuleID:      securebank-env-literal
+Entropy:     2.921928
+File:        app_config.py
+Line:        2
+Commit:      e1462a3f2a65f8410e146d85adbf324570dfd565
+Author:      test
+Email:       a@b.c
+Date:        2026-11-05T01:26:36Z
+Fingerprint: e1462a3f2a65f8410e146d85adbf324570dfd565:app_config.py:securebank-env-literal:2
+
+Finding:     SECUREBANK_JWT_SECRET=REDACTED
+Secret:      REDACTED
+RuleID:      generic-api-key
+Entropy:     3.836592
+File:        app_config.py
+Line:        2
+Commit:      e1462a3f2a65f8410e146d85adbf324570dfd565
+Author:      test
+Email:       a@b.c
+Date:        2026-11-05T01:26:36Z
+Fingerprint: e1462a3f2a65f8410e146d85adbf324570dfd565:app_config.py:generic-api-key:2
+
+1:26AM INF 2 commits scanned.
+1:26AM INF scanned ~211454 bytes (211.45 KB) in 147ms
+1:26AM WRN leaks found: 3
+exit code: 1  (el job 'secret-scan' falla y bloquea SAST, SCA y Package)

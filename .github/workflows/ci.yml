@@ -1,0 +1,245 @@
+# SecureBank API · CI v1.2
+#
+# Entregable oficial de la Sesión 04 (Pipeline CI v1.0: checkout · install
+# · build · test · artifact) ampliado en la Sesión 05 con la etapa SAST
+# (Semgrep) insertada entre Unit Tests y Package, tal como especifica
+# docs/threat-model.md y security-reports/sast-classification.md.
+# Sesión 06 agrega SCA + SBOM + policy gate CVSS (Trivy); Sesión 07 agrega
+# Secret Scan (Gitleaks) como PRIMERA etapa: falla rápido, antes de gastar
+# recursos en SAST/SCA.
+#
+# Controles de seguridad aplicados sobre el pipeline mismo (ejercicio
+# "¿Cuántos riesgos ven aquí?" de la Sesión 04 — R1-R4):
+#   R1 permissions: write-all       -> permissions: contents: read (mínimo privilegio)
+#   R2 curl | sudo bash             -> solo actions oficiales, pinneadas por versión
+#   R3 npm install sin lockfile     -> pip install -r requirements con hashes fijos
+#   R4 secreto hardcodeado en YAML  -> ${{ secrets.* }}, nunca en texto plano
+
+name: SecureBank API · CI v1.2
+
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+    branches: [main]
+
+# R1 · principio de mínimo privilegio — el pipeline solo necesita leer el repo.
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.11"
+  # Sesión 7: secretos SOLO desde GitHub Secrets (nunca en el YAML).
+  # Para el job de tests se genera un secreto efímero (ver conftest.py).
+
+jobs:
+  # ───────────────────────── ETAPA 0 · SECRET SCAN (Sesión 7) ─────────────────────────
+  secret-scan:
+    name: Secret Scan (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (historial completo)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Binario oficial descargado con verificación de checksum (R2).
+      - name: Install Gitleaks v8.30.1
+        run: |
+          set -euo pipefail
+          V=8.30.1
+          F="gitleaks_${V}_linux_x64.tar.gz"
+          curl -sSfL -o "$F" "https://github.com/gitleaks/gitleaks/releases/download/v${V}/${F}"
+          curl -sSfL -o gl.sum "https://github.com/gitleaks/gitleaks/releases/download/v${V}/gitleaks_${V}_checksums.txt"
+          grep "$F" gl.sum | sha256sum -c -
+          tar xzf "$F" gitleaks
+          sudo install gitleaks /usr/local/bin/gitleaks
+
+      # exit code != 0 ante cualquier hallazgo -> el pipeline FALLA (sin warnings ignorables).
+      - name: Gitleaks detect (historial completo)
+        run: gitleaks detect --source . -c .gitleaks.toml --redact -v --report-format sarif --report-path gitleaks.sarif
+
+      - name: Upload Gitleaks report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report-${{ github.sha }}
+          path: gitleaks.sarif
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # ───────────────────────── ETAPA 1-2 · BUILD + UNIT TEST ─────────────────────────
+  build-test:
+    name: Build & Unit Tests
+    needs: secret-scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      # R3 · dependencias con versión fijada (requirements-dev.txt pineado)
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Build check (compileall)
+        run: python -m compileall securebank_api
+
+      - name: Unit tests (pytest + cobertura)
+        run: |
+          pytest tests/ -v --cov=securebank_api --cov-report=xml --cov-report=term \
+            --junitxml=test-results.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ github.sha }}
+          path: |
+            test-results.xml
+            coverage.xml
+          retention-days: 7
+
+  # ───────────────────────── ETAPA 3 · SECURITY TEST (SAST) ─────────────────────────
+  sast:
+    name: SAST (Semgrep)
+    needs: build-test
+    runs-on: ubuntu-latest
+    # solo este job necesita escribir en code scanning (mínimo privilegio, R1)
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Semgrep (versión fijada)
+        run: pip install -r requirements-sast.txt
+
+      # Ruleset local (.semgrep-rules/) — replica p/owasp-top-ten porque
+      # semgrep.dev no es alcanzable desde el runner sandboxed usado para
+      # generar este repositorio; en un runner con salida a internet normal,
+      # usar --config=p/owasp-top-ten --config=p/security-audit directamente.
+      - name: Run Semgrep (SAST)
+        run: |
+          semgrep --config=.semgrep-rules/securebank-rules.yaml \
+                  --error \
+                  --sarif -o sast.sarif \
+                  securebank_api/
+
+      - name: Upload SAST report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sast-report-${{ github.sha }}
+          path: sast.sarif
+          retention-days: 7
+
+      - name: Upload to GitHub code scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: sast.sarif
+
+  # ───────────────────────── ETAPA 4 · SCA + SBOM + POLICY GATE (Sesión 6) ─────────────────────────
+  sca:
+    name: SCA + SBOM (Trivy) · policy CVSS
+    needs: sast
+    runs-on: ubuntu-latest
+    outputs:
+      blocked: ${{ steps.gate.outputs.blocked }}
+      needs_approval: ${{ steps.gate.outputs.needs_approval }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Trivy · vulnerabilidades (JSON con CVSS)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: requirements.txt
+          format: json
+          output: reports/securebank-vulns.json
+          exit-code: "0"          # la decisión la toma el policy gate, no Trivy
+
+      - name: Trivy · SBOM CycloneDX 1.5
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: requirements.txt
+          format: cyclonedx
+          output: reports/securebank-sbom.cdx.json
+
+      # Semáforo: >=9.0 bloquea · 7.0-8.9 requiere aprobación · <7.0 se registra.
+      - name: Policy gate CVSS
+        id: gate
+        run: python scripts/cvss_gate.py reports/securebank-vulns.json --out reports/securebank-vulns.md
+
+      - name: Upload SCA reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sca-reports-${{ github.sha }}
+          path: reports/
+          retention-days: 7
+
+  # ───────────────────────── ETAPA 5 · APROBACIÓN HUMANA (CVSS 7.0-8.9) ─────────────────────────
+  # El Environment `security-approval` debe tener "Required reviewers"
+  # (Tech Lead / Security Champion) en Settings → Environments.
+  approval:
+    name: Aprobación de seguridad
+    needs: sca
+    if: ${{ needs.sca.outputs.needs_approval == 'true' }}
+    runs-on: ubuntu-latest
+    environment: security-approval
+    steps:
+      - run: echo "Aprobado por revisor de seguridad — ver reports/securebank-vulns.md"
+
+  # ───────────────────────── ETAPA 6 · PACKAGE ─────────────────────────
+  package:
+    name: Package
+    needs: [sca, approval]
+    # corre aunque 'approval' se omita (no hubo CVE alto), pero nunca si algo falló
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Build distributable artifact
+        run: |
+          mkdir -p dist
+          zip -r "dist/securebank-api-${{ github.sha }}.zip" \
+            securebank_api requirements.txt README.md \
+            -x "**/__pycache__/*"
+
+      # Artefacto nombrado con hash de commit, retención mínima 7 días
+      # (checklist de aceptación de la Sesión 04).
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist/
+          retention-days: 7

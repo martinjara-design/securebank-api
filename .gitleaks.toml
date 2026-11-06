@@ -1,0 +1,19 @@
+title = "SecureBank API · gitleaks"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "securebank-env-literal"
+description = "Secreto SECUREBANK_* con valor literal"
+regex = '''(?i)SECUREBANK_(?:JWT_SECRET|DEMO_[A-Z]+_PW)[ \t]*[=:][ \t]*["']?[^\s"'$][^\s"']{7,}'''
+keywords = ["securebank_"]
+
+[allowlist]
+description = "Excepciones justificadas (revisar en cada cambio vía PR + CODEOWNERS)"
+paths = [
+  '''(^|/)tests/conftest\.py$''',
+  '''(^|/)reports/.*\.pip-audit\.json$''',
+  '''(^|/)docs/SECRETS\.md$''',
+  '''(^|/)evidence/''',
+]

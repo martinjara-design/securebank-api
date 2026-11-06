@@ -1,104 +1,58 @@
-# securebank-api
 # SecureBank API · SecurePipeline
 
-[![CI](https://github.com/<ORG>/securebank-api/actions/workflows/ci.yml/badge.svg)](https://github.com/<ORG>/securebank-api/actions/workflows/ci.yml)
+[![CI](https://github.com/martinjara-design/securebank-api/actions/workflows/ci.yml/badge.svg)](https://github.com/martinjara-design/securebank-api/actions/workflows/ci.yml)
 
+Proyecto transversal del curso **Sistemas Automatizados DevSecOps** (UBO · Ingeniería Informática). API REST bancaria endurecida sesión a sesión: repositorio seguro → threat model → CI/CD → SAST → SCA/SBOM → secretos.
 
-
-
-Proyecto transversal del curso **Sistemas Automatizados DevSecOps**
-(UBO · Ingeniería Informática). SecureBank API es una API REST
-bancaria construida de forma incremental, sesión a sesión, aplicando
-prácticas DevSecOps de extremo a extremo: threat modeling → pipeline
-CI/CD → SAST → (SCA/DAST en próximas sesiones).
-
-## Estado del pipeline — v1.1
+## Pipeline v1.2
 
 ```
-Checkout → Setup → Install deps → Build → Unit Tests → SAST (Semgrep) → Package
+Secret Scan (Gitleaks) → Build & Unit Tests → SAST (Semgrep) → SCA + SBOM (Trivy + gate CVSS) → [Aprobación] → Package
 ```
 
-| Sesión | Entregable | Estado |
-|---|---|---|
-| 03 · Threat Modeling | `docs/threat-model.md` + `docs/security-stories.md` | ✅ 12 amenazas, 12 security stories |
-| 04 · CI/CD Pipeline | `.github/workflows/ci.yml` (etapas checkout·install·build·test·artifact) | ✅ Pipeline v1.0 funcional |
-| 05 · SAST | Etapa `sast` en el pipeline + `security-reports/` | ✅ 6 hallazgos → 0 hallazgos |
+## Entregables por sesión
 
-## Estructura del repositorio
+| Sesión | Entregable | Dónde | Estado |
+|---|---|---|---|
+| 1 · Intro DevSecOps | Diagrama del ciclo (PDF 1 página) | [`docs/sesion-01/`](docs/sesion-01/README.md) | ✅ |
+| 2 · Git y repos seguros | Política `POL-REPO-001` + `CODEOWNERS` | [`POL-REPO-001.md`](POL-REPO-001.md), [`.github/CODEOWNERS`](.github/CODEOWNERS) | ✅ falta configurar protección de `main` y handles reales |
+| 3 · Threat Modeling | Threat model (12 amenazas), DFD, security stories | [`docs/threat-model.md`](docs/threat-model.md), [`docs/security-stories.md`](docs/security-stories.md) | ✅ |
+| 4 · CI/CD | Pipeline CI + análisis del pipeline inseguro | [`.github/workflows/ci.yml`](.github/workflows/ci.yml), [`docs/sesion-04-pipeline-inseguro.md`](docs/sesion-04-pipeline-inseguro.md) | ✅ falta confirmar ejecución en verde |
+| 5 · SAST | Reportes SARIF antes/después, clasificación OWASP, diff | [`security-reports/`](security-reports/) | ✅ 6 → 0 hallazgos |
+| 6 · SCA y SBOM | SBOM CycloneDX, reporte de vulnerabilidades, policy gate | [`reports/`](reports/README.md), [`scripts/cvss_gate.py`](scripts/cvss_gate.py) | 🟡 base local lista; oficiales los genera el CI |
+| 7 · Secretos | `docs/SECRETS.md`, `.gitleaks.toml`, pre-commit, job `secret-scan` | [`docs/SECRETS.md`](docs/SECRETS.md) | 🟡 falta enlace a ejecución real de bloqueo |
+
+Decisiones técnicas: [`docs/BITACORA.md`](docs/BITACORA.md).
+
+## Estructura
 
 ```
 securebank-api/
-├── .github/workflows/ci.yml       # Pipeline v1.1 (Build → Test → SAST → Package)
-├── .semgrep-rules/                # Ruleset SAST local (réplica de p/owasp-top-ten)
-├── securebank_api/                # Código de la API (Flask)
-│   ├── app.py                     # App factory + cabeceras de seguridad
-│   ├── auth.py                    # JWT + bcrypt + rate limiting
-│   ├── users.py                   # /login /register (consultas parametrizadas)
-│   ├── accounts.py                # /accounts/{id} (fix IDOR)
-│   ├── transfer.py                # /transfer (fix BOLA)
-│   ├── export.py                  # /export (fix Command Injection)
-│   ├── view.py                    # /welcome (fix XSS)
-│   ├── calc.py                    # /calc/rate (fix eval inseguro)
-│   └── db.py                      # Capa de datos (SQLite en memoria)
-├── tests/test_basic.py            # 15 pruebas unitarias (etapa Unit Tests)
-├── docs/
-│   ├── threat-model.md            # Entregable Sesión 03 — DFD + STRIDE (12 amenazas)
-│   └── security-stories.md        # Backlog de security stories (12)
-├── security-reports/
-│   ├── sast-before.sarif          # Reporte SAST inicial — 6 hallazgos
-│   ├── sast-after.sarif           # Reporte SAST final — 0 hallazgos
-│   ├── sast-classification.md     # Clasificación OWASP de los hallazgos
-│   ├── diff-fixes.md              # Diff línea a línea de cada corrección
-│   └── vulnerable-snapshot/       # Código pre-corrección (solo para trazabilidad SAST)
-├── requirements.txt
-├── requirements-dev.txt
-└── README.md
+├── .github/{workflows/ci.yml, CODEOWNERS}
+├── .semgrep-rules/        .gitleaks.toml     .pre-commit-config.yaml   .env.example
+├── securebank_api/        # API Flask
+├── tests/                 # 15 pruebas (conftest.py aporta variables de entorno de test)
+├── docs/                  # threat model, stories, SECRETS, bitácora, sesión 1 y 4
+├── security-reports/      # SAST (sesión 5)
+├── reports/  evidence/    # SCA/SBOM (sesión 6) y evidencia de Gitleaks (sesión 7)
+├── scripts/cvss_gate.py
+├── POL-REPO-001.md
+└── requirements{,-dev,-sast}.txt
 ```
 
-## Cómo correr el proyecto localmente
+## Ejecutar localmente
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
-
-# Tests
+export SECUREBANK_JWT_SECRET=$(python -c "import secrets;print(secrets.token_hex(32))")  # o copiar .env.example a .env
 pytest tests/ -v --cov=securebank_api
-
-# SAST (mismo comando que corre en CI)
-semgrep --config=.semgrep-rules/securebank-rules.yaml --sarif -o sast.sarif securebank_api/
-
-# Levantar la API
 python -m securebank_api.app
 ```
+SAST: `pip install -r requirements-sast.txt && semgrep --config=.semgrep-rules/securebank-rules.yaml --error securebank_api/` · Secretos: `gitleaks detect -c .gitleaks.toml --redact -v`.
 
-## Modelo de amenazas y controles
-
-Ver [`docs/threat-model.md`](docs/threat-model.md) para el DFD completo
-(3 trust boundaries), el análisis STRIDE con 12 amenazas y su control
-propuesto, y el caso de análisis BOLA en `POST /transfer`.
-
-## Seguridad en el pipeline mismo
-
-El workflow (`ci.yml`) aplica el principio de mínimo privilegio
-(`permissions: contents: read`), usa únicamente GitHub Actions
-oficiales pinneadas por versión, fija las dependencias vía
-`requirements-dev.txt`, y no contiene ningún secreto en texto plano
-— ver los comentarios R1-R4 al inicio del archivo, que documentan las
-correcciones aplicadas sobre el ejercicio de pipeline inseguro de la
-Sesión 04.
-
-## Reportes SAST (Sesión 05)
-
-Ver [`security-reports/sast-classification.md`](security-reports/sast-classification.md)
-para la tabla de clasificación OWASP completa. Resumen:
-
-| | CRITICAL | HIGH | Total |
-|---|---|---|---|
-| Antes (`sast-before.sarif`) | 3 | 3 | **6** |
-| Después (`sast-after.sarif`) | 0 | 0 | **0** |
-
-## Próxima sesión
-
-Sesión 06 — SCA (Software Composition Analysis): escaneo del árbol de
-dependencias, identificación de CVEs y emisión de un SBOM firmado.
-Etapa nueva en el pipeline: `Build → Unit Tests → SAST → SCA → Package`.
+## Pendiente antes de entregar (necesita GitHub)
+1. Branch protection en `main` según `POL-REPO-001.md` (status checks: `secret-scan`, `build-test`, `sast`, `sca`) y Environment `security-approval` con revisores.
+2. Reemplazar `@usuario-*` en `CODEOWNERS` por los handles reales.
+3. Primera ejecución de Actions en verde; copiar SBOM/vulns oficiales a `reports/`.
+4. Rama `test/secret-leak` para la evidencia del §6 de `docs/SECRETS.md`.
