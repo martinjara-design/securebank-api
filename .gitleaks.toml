@@ -1,0 +1,24 @@
+# Configuración de Gitleaks — SecureBank API (Sesión 07)
+# Extiende las reglas por defecto y suma una regla propia del proyecto.
+title = "SecureBank API · Gitleaks"
+
+[extend]
+useDefault = true
+
+# Regla propia: detecta un valor por defecto literal en la lectura de un
+# secreto desde el entorno, p. ej. os.environ.get("X_SECRET", "dev-only-change-me").
+# Las reglas por defecto no lo marcan, pero equivale a un secreto hardcodeado.
+[[rules]]
+id = "securebank-env-secret-literal-default"
+description = "Secreto leído del entorno con valor por defecto literal"
+regex = '''(?i)environ\.get\(\s*["'][A-Z0-9_]*(SECRET|PASSWORD|TOKEN|API_?KEY|PRIVATE_?KEY)[A-Z0-9_]*["']\s*,\s*["'][^"']+["']\s*\)'''
+keywords = ["environ.get"]
+tags = ["securebank", "hardcoded-default"]
+
+[allowlist]
+description = "Excepciones justificadas (cada una debe revisarse en el PR)"
+paths = [
+  '''docs/SECRETS\.md''',                        # cita patrones de ejemplo
+  '''\.env\.example''',                          # plantilla sin valores reales
+  '''security-reports/vulnerable-snapshot/.*''', # código vulnerable a propósito (trazabilidad SAST, Sesión 05)
+]

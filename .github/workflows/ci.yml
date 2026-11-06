@@ -1,0 +1,94 @@
+# SecurePipeline v1.2 — SecureBank API
+# Sesión 07: se agrega la etapa Secret Scan (Gitleaks) ANTES de SAST y SCA.
+# Un secreto detectado => exit code 1 => ninguna etapa posterior se ejecuta.
+#
+# NOTA: este archivo fue reconstruido a partir del README del repo (el ci.yml
+# original no está en el historial de GitHub). Si el equipo tiene su versión
+# local con SCA/SBOM de la Sesión 06, conservar sus etapas y copiar solo el
+# job "secret-scan" y los "needs: secret-scan".
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  GITLEAKS_VERSION: "8.18.4"
+  GITLEAKS_SHA256: "ba6dbb656933921c775ee5a2d1c13a91046e7952e9d919f9bac4cec61d628e7d"
+
+jobs:
+  secret-scan:
+    name: Etapa 1 · Secret Scan (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # historial completo, no solo el último commit
+      - name: Instalar Gitleaks (versión fijada + checksum)
+        run: |
+          curl -sSL -o gitleaks.tgz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  gitleaks.tgz" | sha256sum -c -
+          tar xzf gitleaks.tgz gitleaks
+      - name: Escanear código e historial (falla si hay hallazgos)
+        run: |
+          ./gitleaks detect --source . --config .gitleaks.toml \
+            --redact --verbose --exit-code 1 \
+            --report-format sarif --report-path gitleaks-report.sarif
+      - name: Subir reporte
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: gitleaks-report.sarif
+
+  build-test:
+    name: Build · Unit Tests
+    needs: secret-scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      # No se define SECUREBANK_JWT_SECRET: tests/conftest.py genera uno efímero.
+      - run: pytest tests/ -v --cov=securebank_api
+
+  sast:
+    name: SAST (Semgrep)
+    needs: secret-scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install semgrep==1.86.0
+      - run: semgrep --config=.semgrep-rules/securebank-rules.yaml --sarif -o sast.sarif --error securebank_api/
+
+  sca:
+    name: SCA (pip-audit)
+    needs: secret-scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pip-audit==2.10.1
+      - run: pip-audit -r requirements.txt
+
+  package:
+    name: Package
+    needs: [build-test, sast, sca]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: securebank-api
+          path: securebank_api/
