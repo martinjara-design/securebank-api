@@ -113,7 +113,7 @@ Se abrió un pull request hacia `main` con un commit que contenía un token fals
 
 - `Secret Scan (Gitleaks)` terminó en rojo (`exit 1`).
 - `Build & Unit Tests`, `SAST`, `SCA + SBOM`, `Aprobación de seguridad` y `Package` quedaron omitidos.
-- - Ejecución: [ver ejecución en GitHub Actions](https://github.com/martinjara-design/securebank-api/actions/runs/42162895046)
+- Ejecución: [ver ejecución en GitHub Actions](https://github.com/martinjara-design/securebank-api/actions/runs/42162895046)
 - Captura: ![Secret Scan bloqueando el PR](../evidence/secret-scan-bloqueo.png)
 
 El PR se cerró sin merge y la rama se eliminó; el secreto de prueba nunca llegó a `main`.
