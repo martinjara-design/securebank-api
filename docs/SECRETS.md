@@ -106,4 +106,16 @@ exit=1
 
 Con `exit=1` el job `secret-scan` queda en estado *failed* y los jobs `build-test`, `sast`, `sca` y `package` no se ejecutan.
 
-> **Pendiente de adjuntar por el equipo:** captura de la pestaña *Actions* de GitHub mostrando el job `secret-scan` en rojo sobre un pull request con un secreto de prueba. Lo anterior se ejecutó localmente; la captura en GitHub debe hacerse una vez que `ci.yml` esté en el repo.
+
+**C. Ejecución en GitHub Actions (CI) — bloquea:**
+
+Se abrió un pull request hacia `main` con un commit que contenía un token falso (rama `test/secret-leak`). Resultado:
+
+- `Secret Scan (Gitleaks)` terminó en rojo (`exit 1`).
+- `Build & Unit Tests`, `SAST`, `SCA + SBOM`, `Aprobación de seguridad` y `Package` quedaron omitidos.
+- - Ejecución: [ver ejecución en GitHub Actions](https://github.com/martinjara-design/securebank-api/actions/runs/42162895046)
+- Captura: ![Secret Scan bloqueando el PR](../evidence/secret-scan-bloqueo.png)
+
+El PR se cerró sin merge y la rama se eliminó; el secreto de prueba nunca llegó a `main`.
+
+> Nota: las secciones A y B se obtuvieron en local con Gitleaks v8.18.4 y la configuración anterior del repo. Hoy el CI usa Gitleaks v8.30.1 y la regla `securebank-env-literal`; la sección C corresponde a la configuración vigente.
