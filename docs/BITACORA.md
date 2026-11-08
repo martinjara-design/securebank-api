@@ -4,7 +4,7 @@ Resumen de las decisiones técnicas por sesión. Complementa el documento "Anál
 | Sesión | Decisión | Motivo |
 |---|---|---|
 | 2 | `main` protegida con un ruleset: PR obligatorio, 1 aprobación, revisión de Code Owners, resolución de conversaciones, 4 status checks obligatorios, sin force push ni borrado y sin lista de bypass (`POL-REPO-001.md`) | Cubrir los 7 riesgos del repositorio. Prueba: un push directo a `main` fue rechazado (GH013, "Changes must be made through a pull request") |
-| 2 | Commits firmados (GPG/SSH): exigidos por la política, pendientes de activar en el ruleset | Requiere que cada integrante registre su clave en GitHub |
+| 2 | Commits firmados con SSH: la clave de firma de Martín quedó verificada (commit de prueba con etiqueta Verified); falta activar **Require signed commits** en el ruleset | Se activa cuando ambos integrantes tengan su clave de firma registrada, para no bloquear a nadie |
 | 2 | `CODEOWNERS` con `@nelsinho13` y `@martinjara-design` en cada ruta crítica | Cada PR lo aprueba la otra persona: nadie aprueba su propio cambio |
 | 3 | 12 amenazas STRIDE, 3 trust boundaries, 12 security stories | Mínimo exigido: 10 amenazas y 5 stories |
 | 4 | GitHub Actions; permisos mínimos; acciones por versión fija | Corregir R1–R4 del pipeline inseguro |
@@ -23,3 +23,4 @@ Resumen de las decisiones técnicas por sesión. Complementa el documento "Anál
 | 7 | Rotación JWT cada 90 días; respuesta Detectar → Revocar → Rotar → Limpiar → Notificar | Ver `docs/SECRETS.md` |
 | 7 | Se corrigió un status check requerido con nombre antiguo (`Build · Unit Tests`) por `Build & Unit Tests` | El nombre del check debe coincidir con el job actual de `ci.yml`; si no, el PR queda esperando un check que nunca llega |
 | 7 | Un commit de prueba (push directo antes de activar el ruleset) dejó una línea en el README y un bloque pegado en `POL-REPO-001.md`; se revirtió por PR | Se detectó antes de entregar; desde entonces `main` solo admite cambios por PR |
+| 7 | Durante las pruebas, un commit vacío sin firma se mergeó a `main` por error, antes de activar la regla de firmas; el commit no modifica archivos y el historial no se reescribió | Hallazgo registrado: la regla se activará una vez verificadas las claves de ambos integrantes |
