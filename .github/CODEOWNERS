@@ -1,9 +1,9 @@
-# POL-REPO-001 §3/§4 — archivos críticos exigen aprobación del dueño responsable.
-# Reemplazar @usuario-* por los handles reales de GitHub del equipo.
-*                          @usuario-code-owner
-/.github/workflows/        @usuario-code-owner @usuario-secret-custodian
-/.gitleaks.toml            @usuario-code-owner @usuario-secret-custodian
-/.pre-commit-config.yaml   @usuario-code-owner @usuario-secret-custodian
-/docs/SECRETS.md           @usuario-secret-custodian
-/scripts/cvss_gate.py      @usuario-code-owner @usuario-secret-custodian
-/requirements*.txt         @usuario-code-owner
+# POL-REPO-001: archivos criticos exigen aprobacion de un dueno.
+*                          @nelsinho13 @martinjara-design
+/.github/workflows/        @nelsinho13 @martinjara-design
+/.gitleaks.toml            @nelsinho13 @martinjara-design
+/.gitleaksignore           @nelsinho13 @martinjara-design
+/.pre-commit-config.yaml   @nelsinho13 @martinjara-design
+/docs/SECRETS.md           @nelsinho13 @martinjara-design
+/scripts/cvss_gate.py      @nelsinho13 @martinjara-design
+/requirements*.txt         @nelsinho13 @martinjara-design
