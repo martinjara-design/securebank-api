@@ -56,3 +56,5 @@ SAST: `pip install -r requirements-sast.txt && semgrep --config=.semgrep-rules/s
 2. Reemplazar `@usuario-*` en `CODEOWNERS` por los handles reales.
 3. Primera ejecución de Actions en verde; copiar SBOM/vulns oficiales a `reports/`.
 4. Rama `test/secret-leak` para la evidencia del §6 de `docs/SECRETS.md`.
+
+prueba

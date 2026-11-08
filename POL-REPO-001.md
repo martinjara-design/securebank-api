@@ -43,3 +43,12 @@ Esta política es de cumplimiento obligatorio y aplica a todos los repositorios 
 - **Emergencia (caída o vulnerabilidad crítica en producción):** el Code owner o el Release Manager pueden omitir la aprobación previa del PR. El pipeline de escaneos se ejecuta igualmente; la revisión del cambio ocurre dentro de 24 h y se registra en la bitácora.
 - **Solicitud de excepción:** issue etiquetado `excepcion-politica` con motivo, alcance y fecha de expiración; la aprueba el Code owner.
 - **Revisión de la política:** al cierre de cada sesión que incorpore un control nuevo y, como mínimo, cada trimestre. Los accesos se revisan cada trimestre.
+# POL-REPO-001 §3/§4 - archivos criticos exigen aprobacion de un dueno.
+*                          @nelsinho13 @martinjara-design
+/.github/workflows/        @nelsinho13 @martinjara-design
+/.gitleaks.toml            @nelsinho13 @martinjara-design
+/.gitleaksignore           @nelsinho13 @martinjara-design
+/.pre-commit-config.yaml   @nelsinho13 @martinjara-design
+/docs/SECRETS.md           @nelsinho13 @martinjara-design
+/scripts/cvss_gate.py      @nelsinho13 @martinjara-design
+/requirements*.txt         @nelsinho13 @martinjara-design
