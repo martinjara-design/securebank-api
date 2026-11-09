@@ -1,0 +1,152 @@
+{
+  "SchemaVersion": 2,
+  "Trivy": {
+    "Version": "0.70.0"
+  },
+  "ReportID": "01a1c203-337e-7d57-9e4d-02a6486915f7",
+  "CreatedAt": "2026-11-09T20:32:32.126876151Z",
+  "ArtifactName": "reports/securebank-sbom.cdx.json",
+  "ArtifactType": "cyclonedx",
+  "Results": [
+    {
+      "Target": "Python",
+      "Class": "lang-pkgs",
+      "Type": "python-pkg",
+      "Packages": [
+        {
+          "ID": "Flask@3.1.3",
+          "Name": "Flask",
+          "Identifier": {
+            "PURL": "pkg:pypi/flask@3.1.3",
+            "UID": "93a44c5040bdb402",
+            "BOMRef": "Flask==3.1.3"
+          },
+          "Version": "3.1.3",
+          "Licenses": [
+            "BSD-3-Clause"
+          ],
+          "DependsOn": [
+            "Jinja2@3.1.6",
+            "MarkupSafe@2.1.5",
+            "Werkzeug@3.1.9",
+            "blinker@1.9.0",
+            "click@8.5.1",
+            "itsdangerous@2.2.0"
+          ]
+        },
+        {
+          "ID": "Jinja2@3.1.6",
+          "Name": "Jinja2",
+          "Identifier": {
+            "PURL": "pkg:pypi/jinja2@3.1.6",
+            "UID": "441616a099b57e36",
+            "BOMRef": "Jinja2==3.1.6"
+          },
+          "Version": "3.1.6",
+          "Licenses": [
+            "License :: OSI Approved :: BSD License"
+          ],
+          "DependsOn": [
+            "MarkupSafe@2.1.5"
+          ]
+        },
+        {
+          "ID": "MarkupSafe@2.1.5",
+          "Name": "MarkupSafe",
+          "Identifier": {
+            "PURL": "pkg:pypi/markupsafe@2.1.5",
+            "UID": "baa89a54bdb9168e",
+            "BOMRef": "MarkupSafe==2.1.5"
+          },
+          "Version": "2.1.5",
+          "Licenses": [
+            "BSD-3-Clause",
+            "License :: OSI Approved :: BSD License"
+          ]
+        },
+        {
+          "ID": "PyJWT@2.15.0",
+          "Name": "PyJWT",
+          "Identifier": {
+            "PURL": "pkg:pypi/pyjwt@2.15.0",
+            "UID": "944d2ed39332bd27",
+            "BOMRef": "PyJWT==2.15.0"
+          },
+          "Version": "2.15.0",
+          "Licenses": [
+            "MIT"
+          ]
+        },
+        {
+          "ID": "Werkzeug@3.1.9",
+          "Name": "Werkzeug",
+          "Identifier": {
+            "PURL": "pkg:pypi/werkzeug@3.1.9",
+            "UID": "3211507e96e8da4c",
+            "BOMRef": "Werkzeug==3.1.9"
+          },
+          "Version": "3.1.9",
+          "Licenses": [
+            "BSD-3-Clause"
+          ],
+          "DependsOn": [
+            "MarkupSafe@2.1.5"
+          ]
+        },
+        {
+          "ID": "bcrypt@4.2.0",
+          "Name": "bcrypt",
+          "Identifier": {
+            "PURL": "pkg:pypi/bcrypt@4.2.0",
+            "UID": "9e258e516c2541cb",
+            "BOMRef": "bcrypt==4.2.0"
+          },
+          "Version": "4.2.0",
+          "Licenses": [
+            "Apache-2.0",
+            "License :: OSI Approved :: Apache Software License"
+          ]
+        },
+        {
+          "ID": "blinker@1.9.0",
+          "Name": "blinker",
+          "Identifier": {
+            "PURL": "pkg:pypi/blinker@1.9.0",
+            "UID": "2638ea98e1c74b42",
+            "BOMRef": "blinker==1.9.0"
+          },
+          "Version": "1.9.0",
+          "Licenses": [
+            "MIT"
+          ]
+        },
+        {
+          "ID": "click@8.5.1",
+          "Name": "click",
+          "Identifier": {
+            "PURL": "pkg:pypi/click@8.5.1",
+            "UID": "2d97fc5c466b09ac",
+            "BOMRef": "click==8.5.1"
+          },
+          "Version": "8.5.1",
+          "Licenses": [
+            "BSD-3-Clause"
+          ]
+        },
+        {
+          "ID": "itsdangerous@2.2.0",
+          "Name": "itsdangerous",
+          "Identifier": {
+            "PURL": "pkg:pypi/itsdangerous@2.2.0",
+            "UID": "7b62a20a81252586",
+            "BOMRef": "itsdangerous==2.2.0"
+          },
+          "Version": "2.2.0",
+          "Licenses": [
+            "License :: OSI Approved :: BSD License"
+          ]
+        }
+      ]
+    }
+  ]
+}
