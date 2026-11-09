@@ -2,15 +2,16 @@
 
 ## Reportes oficiales (generados por el pipeline)
 
-Generados por el job `sca` de `.github/workflows/ci.yml` en la ejecución #8 (merge del PR #1 a `main`), con Trivy y el policy gate `scripts/cvss_gate.py`.
+Generados por el job `sca` de `.github/workflows/ci.yml` en la ejecución de `main` [42693723835](https://github.com/martinjara-design/securebank-api/actions/runs/42693723835). El SBOM se produce dentro del pipeline con `cyclonedx-py`, Trivy analiza ese SBOM y el policy gate `scripts/cvss_gate.py` aplica la política CVSS.
 
 | Archivo | Qué es |
 |---|---|
-| `securebank-sbom.cdx.json` | SBOM en formato CycloneDX 1.5 generado por Trivy a partir de `requirements.txt` |
-| `securebank-vulns.json` | Reporte de vulnerabilidades de Trivy, con puntajes CVSS |
-| `securebank-vulns.md` | Tabla de decisión por CVE según la política CVSS |
+| `securebank-sbom.cdx.json` | SBOM CycloneDX 1.5 generado por el job `sca` con `cyclonedx-py`: dependencias directas y transitivas, con PURL y licencia |
+| `securebank-vulns.json` | Salida JSON de Trivy sobre el SBOM, con puntajes CVSS |
+| `securebank-vulns.md` | Reporte legible: CVE, componente, CVSS, decisión según el semáforo y justificación |
+| `securebank-vulns.html` | El mismo reporte en HTML |
 
-**Resultado en `main`:** 0 CVEs, 0 bloqueantes, 0 que requieran aprobación.
+**Resultado en `main`:** 9 componentes analizados, 0 CVEs, 0 bloqueantes, 0 que requieran aprobación.
 
 ## Política CVSS (semáforo)
 
@@ -26,7 +27,7 @@ Generados por el job `sca` de `.github/workflows/ci.yml` en la ejecución #8 (me
 |---|---|---|
 | `securebank-vulns-before.pip-audit.json` | Dependencias directas antes de actualizar: 24 avisos en Flask 3.0.3 y PyJWT 2.9.0 | `pip-audit --no-deps` |
 | `securebank-vulns.pip-audit.json` | Después de actualizar a Flask 3.1.3 y PyJWT 2.15.0: 0 vulnerabilidades, incluyendo dependencias transitivas | `pip-audit` |
-| `../evidence/sca-gate-bloqueo.md` | Prueba en el pipeline con las versiones vulnerables: 17 CVEs, 2 bloqueantes (CVSS 9.1), 8 con aprobación requerida | Rama `test/sca-vulnerable` |
+| `../evidence/sca-gate-bloqueo.md` | Prueba en el pipeline con las versiones vulnerables: 9 componentes, 17 CVEs, 2 bloqueantes (CVSS 9.1) y 8 con aprobación requerida; el job falló por política | PR de prueba con Flask 3.0.3 y PyJWT 2.9.0 |
 
 `pip-audit` no entrega puntaje CVSS, por eso la clasificación por semáforo la hace el gate sobre el reporte de Trivy.
 
