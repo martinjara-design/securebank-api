@@ -154,6 +154,10 @@ jobs:
           sarif_file: sast.sarif
 
   # ───────────────────────── ETAPA 4 · SCA + SBOM + POLICY GATE (Sesión 6) ─────────────────────────
+  # El SBOM sale del pipeline (no se genera a mano): se instalan las dependencias
+  # en un entorno limpio y se documentan directas + transitivas, con PURL y licencia.
+  # Trivy analiza ese SBOM (así también se evalúan las transitivas) y el gate
+  # aplica el semáforo CVSS con justificación por CVE.
   sca:
     name: SCA + SBOM (Trivy) · policy CVSS
     needs: sast
@@ -170,27 +174,36 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Trivy · vulnerabilidades (JSON con CVSS)
+      - name: SBOM · CycloneDX 1.5 (directas y transitivas, con PURL y licencias)
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          # entorno solo con las dependencias de runtime (sin pip, sin herramientas de test)
+          python -m venv --without-pip /tmp/rt
+          python -m pip --python /tmp/rt/bin/python install --quiet -r requirements.txt
+          # herramienta SBOM en un entorno aparte, con versión fija
+          python -m venv /tmp/sbomtool
+          /tmp/sbomtool/bin/pip install --quiet "cyclonedx-bom==8.0.1"
+          /tmp/sbomtool/bin/cyclonedx-py environment /tmp/rt \
+            --spec-version 1.5 --output-format JSON --output-reproducible \
+            --output-file reports/securebank-sbom.cdx.json
+
+      - name: Trivy · vulnerabilidades del SBOM (JSON con CVSS)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          scan-type: fs
-          scan-ref: requirements.txt
+          scan-type: sbom
+          scan-ref: reports/securebank-sbom.cdx.json
           format: json
           output: reports/securebank-vulns.json
           exit-code: "0"          # la decisión la toma el policy gate, no Trivy
 
-      - name: Trivy · SBOM CycloneDX 1.5
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          scan-type: fs
-          scan-ref: requirements.txt
-          format: cyclonedx
-          output: reports/securebank-sbom.cdx.json
-
       # Semáforo: >=9.0 bloquea · 7.0-8.9 requiere aprobación · <7.0 se registra.
       - name: Policy gate CVSS
         id: gate
-        run: python scripts/cvss_gate.py reports/securebank-vulns.json --out reports/securebank-vulns.md
+        run: |
+          python scripts/cvss_gate.py reports/securebank-vulns.json \
+            --sbom reports/securebank-sbom.cdx.json \
+            --out reports/securebank-vulns.md --html reports/securebank-vulns.html
 
       - name: Upload SCA reports
         if: always()
