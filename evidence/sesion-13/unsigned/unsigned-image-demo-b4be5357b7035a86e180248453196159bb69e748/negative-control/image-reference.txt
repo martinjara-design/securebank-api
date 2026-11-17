@@ -1,0 +1,1 @@
+ghcr.io/martinjara-design/securebank-api@sha256:c1d936214501401f9cf199fc2e9e1f03e99e52dc4ea3a63965bdac64f255f6d1

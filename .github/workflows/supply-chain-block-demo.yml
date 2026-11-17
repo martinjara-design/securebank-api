@@ -1,0 +1,135 @@
+name: Bloqueo de imagen sin firma - Sesion 13
+
+on:
+  push:
+    branches:
+      - feature/sesion-13-supply-chain
+    paths:
+      - .github/workflows/supply-chain-block-demo.yml
+      - docker/Dockerfile.unsigned-demo
+
+permissions:
+  contents: read
+
+jobs:
+  verify-image:
+    name: Rechazar imagen sin firma
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      SIGNED_IMAGE: ghcr.io/martinjara-design/securebank-api@sha256:7e1736dcb45a2e33b29c80fd2c23403f0f21e8c8685d2e904533ed6c45c5a837
+      TRUSTED_IDENTITY: https://github.com/martinjara-design/securebank-api/.github/workflows/supply-chain.yml@refs/heads/feature/sesion-13-supply-chain
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Cosign
+        uses: sigstore/cosign-installer@v4.1.0
+        with:
+          cosign-release: v3.0.5
+
+      - name: Preparar evidencias
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports/unsigned-demo
+          date -u +"%Y-%m-%dT%H:%M:%SZ" \
+            > reports/unsigned-demo/date.txt
+
+      - name: Autenticar en GHCR
+        shell: bash
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$REGISTRY_TOKEN" |
+            docker login ghcr.io \
+              --username "$GITHUB_ACTOR" \
+              --password-stdin
+
+      - name: Control positivo con imagen firmada
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          bash scripts/verify_supply_chain.sh \
+            "$SIGNED_IMAGE" \
+            "$TRUSTED_IDENTITY" \
+            reports/unsigned-demo/positive-control \
+            2>&1 | tee reports/unsigned-demo/positive-control.log
+
+      - name: Publicar imagen de prueba sin firmarla
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DEMO_TAG="ghcr.io/${GITHUB_REPOSITORY,,}:unsigned-demo-${GITHUB_SHA}"
+
+          docker build \
+            --file docker/Dockerfile.unsigned-demo \
+            --build-arg "BASE_IMAGE=$SIGNED_IMAGE" \
+            --label "org.securebank.demo.commit=${GITHUB_SHA}" \
+            --tag "$DEMO_TAG" \
+            .
+
+          docker push "$DEMO_TAG"
+
+          DEMO_DIGEST="$(
+            docker image inspect \
+              --format '{{index .RepoDigests 0}}' \
+              "$DEMO_TAG"
+          )"
+
+          if [[ ! "$DEMO_DIGEST" =~ ^ghcr\.io/[a-z0-9._/-]+@sha256:[a-f0-9]{64}$ ]]; then
+            echo "ERROR: digest de prueba invalido." >&2
+            exit 1
+          fi
+
+          if [[ "$DEMO_DIGEST" == "$SIGNED_IMAGE" ]]; then
+            echo "ERROR: la imagen de prueba debe tener otro digest." >&2
+            exit 1
+          fi
+
+          echo "DEMO_DIGEST=$DEMO_DIGEST" >> "$GITHUB_ENV"
+
+          printf '%s\n' "$DEMO_DIGEST" \
+            > reports/unsigned-demo/unsigned-image.txt
+
+      - name: Gate obligatorio de firma
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          bash scripts/verify_supply_chain.sh \
+            "$DEMO_DIGEST" \
+            "$TRUSTED_IDENTITY" \
+            reports/unsigned-demo/negative-control \
+            2>&1 | tee reports/unsigned-demo/negative-control.log
+
+      - name: Guardar evidencias
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-image-demo-${{ github.sha }}
+          path: reports/unsigned-demo/
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Cerrar sesion del registro
+        if: always()
+        shell: bash
+        run: docker logout ghcr.io
+
+  continue-demo:
+    name: Continuacion bloqueada si falta firma
+    needs: verify-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Continuar solamente tras verificacion exitosa
+        run: echo "La verificacion permitio continuar."
