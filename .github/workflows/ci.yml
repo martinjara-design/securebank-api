@@ -1,20 +1,3 @@
-# SecureBank API · CI v1.2
-#
-# Entregable oficial de la Sesión 04 (Pipeline CI v1.0: checkout · install
-# · build · test · artifact) ampliado en la Sesión 05 con la etapa SAST
-# (Semgrep) insertada entre Unit Tests y Package, tal como especifica
-# docs/threat-model.md y security-reports/sast-classification.md.
-# Sesión 06 agrega SCA + SBOM + policy gate CVSS (Trivy); Sesión 07 agrega
-# Secret Scan (Gitleaks) como PRIMERA etapa: falla rápido, antes de gastar
-# recursos en SAST/SCA.
-#
-# Controles de seguridad aplicados sobre el pipeline mismo (ejercicio
-# "¿Cuántos riesgos ven aquí?" de la Sesión 04 — R1-R4):
-#   R1 permissions: write-all       -> permissions: contents: read (mínimo privilegio)
-#   R2 curl | sudo bash             -> solo actions oficiales, pinneadas por versión
-#   R3 npm install sin lockfile     -> pip install -r requirements con hashes fijos
-#   R4 secreto hardcodeado en YAML  -> ${{ secrets.* }}, nunca en texto plano
-
 name: SecureBank API · CI v1.2
 
 on:
@@ -23,81 +6,81 @@ on:
   pull_request:
     branches: [main]
 
-# R1 · principio de mínimo privilegio — el pipeline solo necesita leer el repo.
 permissions:
   contents: read
 
 env:
   PYTHON_VERSION: "3.11"
-  # Sesión 7: secretos SOLO desde GitHub Secrets (nunca en el YAML).
-  # Para el job de tests se genera un secreto efímero (ver conftest.py).
 
 jobs:
-  # ───────────────────────── ETAPA 0 · SECRET SCAN (Sesión 7) ─────────────────────────
   secret-scan:
     name: Secret Scan (Gitleaks)
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout (historial completo)
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Binario oficial descargado con verificación de checksum (R2).
-      - name: Install Gitleaks v8.30.1
+      - name: Install Gitleaks
+        shell: bash
         run: |
           set -euo pipefail
           V=8.30.1
           F="gitleaks_${V}_linux_x64.tar.gz"
-          curl -sSfL -o "$F" "https://github.com/gitleaks/gitleaks/releases/download/v${V}/${F}"
-          curl -sSfL -o gl.sum "https://github.com/gitleaks/gitleaks/releases/download/v${V}/gitleaks_${V}_checksums.txt"
+          curl -sSfL -o "$F" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${V}/${F}"
+          curl -sSfL -o gl.sum \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${V}/gitleaks_${V}_checksums.txt"
           grep "$F" gl.sum | sha256sum -c -
           tar xzf "$F" gitleaks
           sudo install gitleaks /usr/local/bin/gitleaks
 
-      # exit code != 0 ante cualquier hallazgo -> el pipeline FALLA (sin warnings ignorables).
-      - name: Gitleaks detect (historial completo)
-        run: gitleaks detect --source . -c .gitleaks.toml --redact -v --report-format sarif --report-path gitleaks.sarif
+      - name: Detectar secretos
+        run: |
+          gitleaks detect --source . \
+            -c .gitleaks.toml --redact -v \
+            --report-format sarif \
+            --report-path gitleaks.sarif
 
-      - name: Upload Gitleaks report
+      - name: Guardar reporte de secretos
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gitleaks-report-${{ github.sha }}
           path: gitleaks.sarif
           retention-days: 7
-          if-no-files-found: ignore
+          if-no-files-found: error
 
-  # ───────────────────────── ETAPA 1-2 · BUILD + UNIT TEST ─────────────────────────
   build-test:
     name: Build & Unit Tests
     needs: secret-scan
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: "pip"
+          cache: pip
 
-      # R3 · dependencias con versión fijada (requirements-dev.txt pineado)
-      - name: Install dependencies
+      - name: Instalar dependencias
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
-      - name: Build check (compileall)
-        run: python -m compileall securebank_api
+      - name: Comprobar sintaxis
+        run: python -m compileall -q securebank_api scripts
 
-      - name: Unit tests (pytest + cobertura)
+      - name: Ejecutar pruebas y medir cobertura
         run: |
-          pytest tests/ -v --cov=securebank_api --cov-report=xml --cov-report=term \
+          pytest tests/ -v \
+            --cov=securebank_api \
+            --cov-report=xml \
+            --cov-report=term \
             --junitxml=test-results.xml
 
-      - name: Upload test results
+      - name: Guardar resultados
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -106,58 +89,48 @@ jobs:
             test-results.xml
             coverage.xml
           retention-days: 7
+          if-no-files-found: error
 
-  # ───────────────────────── ETAPA 3 · SECURITY TEST (SAST) ─────────────────────────
   sast:
     name: SAST (Semgrep)
     needs: build-test
     runs-on: ubuntu-latest
-    # solo este job necesita escribir en code scanning (mínimo privilegio, R1)
     permissions:
       contents: read
       security-events: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install Semgrep (versión fijada)
+      - name: Instalar Semgrep
         run: pip install -r requirements-sast.txt
 
-      # Ruleset local (.semgrep-rules/) — replica p/owasp-top-ten porque
-      # semgrep.dev no es alcanzable desde el runner sandboxed usado para
-      # generar este repositorio; en un runner con salida a internet normal,
-      # usar --config=p/owasp-top-ten --config=p/security-audit directamente.
-      - name: Run Semgrep (SAST)
+      - name: Ejecutar SAST
         run: |
-          semgrep --config=.semgrep-rules/securebank-rules.yaml \
-                  --error \
-                  --sarif -o sast.sarif \
-                  securebank_api/
+          semgrep \
+            --config=.semgrep-rules/securebank-rules.yaml \
+            --error \
+            --sarif -o sast.sarif \
+            securebank_api/
 
-      - name: Upload SAST report
+      - name: Guardar reporte SAST
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: sast-report-${{ github.sha }}
           path: sast.sarif
           retention-days: 7
+          if-no-files-found: error
 
-      - name: Upload to GitHub code scanning
+      - name: Publicar en code scanning
         if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: sast.sarif
 
-  # ───────────────────────── ETAPA 4 · SCA + SBOM + POLICY GATE (Sesión 6) ─────────────────────────
-  # El SBOM sale del pipeline (no se genera a mano): se instalan las dependencias
-  # en un entorno limpio y se documentan directas + transitivas, con PURL y licencia.
-  # Trivy analiza ese SBOM (así también se evalúan las transitivas) y el gate
-  # aplica el semáforo CVSS con justificación por CVE.
   sca:
     name: SCA + SBOM (Trivy) · policy CVSS
     needs: sast
@@ -166,56 +139,248 @@ jobs:
       blocked: ${{ steps.gate.outputs.blocked }}
       needs_approval: ${{ steps.gate.outputs.needs_approval }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: SBOM · CycloneDX 1.5 (directas y transitivas, con PURL y licencias)
+      - name: Generar SBOM CycloneDX
+        shell: bash
         run: |
           set -euo pipefail
           mkdir -p reports
-          # entorno solo con las dependencias de runtime (sin pip, sin herramientas de test)
+
           python -m venv --without-pip /tmp/rt
-          python -m pip --python /tmp/rt/bin/python install --quiet -r requirements.txt
-          # herramienta SBOM en un entorno aparte, con versión fija
+          python -m pip --python /tmp/rt/bin/python install \
+            --quiet -r requirements.txt
+
           python -m venv /tmp/sbomtool
-          /tmp/sbomtool/bin/pip install --quiet "cyclonedx-bom==8.0.1"
+          /tmp/sbomtool/bin/pip install \
+            --quiet "cyclonedx-bom==8.0.1"
+
           /tmp/sbomtool/bin/cyclonedx-py environment /tmp/rt \
-            --spec-version 1.5 --output-format JSON --output-reproducible \
+            --spec-version 1.5 \
+            --output-format JSON \
+            --output-reproducible \
             --output-file reports/securebank-sbom.cdx.json
 
-      - name: Trivy · vulnerabilidades del SBOM (JSON con CVSS)
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+      - name: Analizar vulnerabilidades con Trivy
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
           scan-type: sbom
           scan-ref: reports/securebank-sbom.cdx.json
           format: json
           output: reports/securebank-vulns.json
-          exit-code: "0"          # la decisión la toma el policy gate, no Trivy
+          exit-code: "0"
 
-      # Semáforo: >=9.0 bloquea · 7.0-8.9 requiere aprobación · <7.0 se registra.
       - name: Policy gate CVSS
         id: gate
         run: |
-          python scripts/cvss_gate.py reports/securebank-vulns.json \
+          python scripts/cvss_gate.py \
+            reports/securebank-vulns.json \
             --sbom reports/securebank-sbom.cdx.json \
-            --out reports/securebank-vulns.md --html reports/securebank-vulns.html
+            --out reports/securebank-vulns.md \
+            --html reports/securebank-vulns.html
 
-      - name: Upload SCA reports
+      - name: Guardar reportes SCA
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: sca-reports-${{ github.sha }}
-          path: reports/
+          path: |
+            reports/securebank-sbom.cdx.json
+            reports/securebank-vulns.json
+            reports/securebank-vulns.md
+            reports/securebank-vulns.html
           retention-days: 7
+          if-no-files-found: error
 
-  # ───────────────────────── ETAPA 5 · APROBACIÓN HUMANA (CVSS 7.0-8.9) ─────────────────────────
-  # El Environment `security-approval` debe tener "Required reviewers"
-  # (Tech Lead / Security Champion) en Settings → Environments.
+  dast:
+    name: DAST y BOLA
+    needs: build-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Generar secretos temporales
+        shell: bash
+        run: |
+          for VARIABLE in \
+            SECUREBANK_JWT_SECRET \
+            SECUREBANK_DEMO_ALICE_PASSWORD \
+            SECUREBANK_DEMO_BOB_PASSWORD
+          do
+            VALUE=$(openssl rand -hex 32)
+            echo "::add-mask::$VALUE"
+            echo "$VARIABLE=$VALUE" >> "$GITHUB_ENV"
+          done
+
+      - name: Preparar evidencias
+        run: |
+          mkdir -p reports/dast
+          chmod 777 reports/dast
+
+      - name: Levantar API
+        run: docker compose up -d --build
+
+      - name: Esperar a la API
+        shell: bash
+        run: |
+          for intento in {1..30}; do
+            if curl --fail --silent \
+              http://localhost:8080/health
+            then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose logs
+          exit 1
+
+      - name: Comprobar BOLA
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/bola_check.py 2>&1 \
+            | tee reports/dast/bola-results.txt
+
+      - name: Registrar version y fecha de ZAP
+        run: |
+          docker pull ghcr.io/zaproxy/zaproxy:stable
+          date -u +"%Y-%m-%dT%H:%M:%SZ" \
+            > reports/dast/fecha.txt
+
+          docker image inspect \
+            --format '{{index .RepoDigests 0}}' \
+            ghcr.io/zaproxy/zaproxy:stable \
+            > reports/dast/imagen-zap.txt
+
+          docker run --rm ghcr.io/zaproxy/zaproxy:stable \
+            zap.sh -version \
+            > reports/dast/version-zap.txt
+
+      - name: Ejecutar ZAP Baseline
+        run: |
+          docker run --rm --network host \
+            -v "$PWD/reports/dast:/zap/wrk:rw" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+            -t "http://127.0.0.1:8080/welcome?name=DAST" \
+            -r report.html \
+            -J report.json \
+            -I
+
+      - name: Guardar reporte DAST
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-dast-report-${{ github.sha }}
+          path: reports/dast/
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Apagar entorno
+        if: always()
+        run: docker compose down -v
+
+  security-gate:
+    name: Security Gate (OPA)
+    needs: [secret-scan, build-test, sast, sca, dast]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Descargar reporte de secretos
+        uses: actions/download-artifact@v4
+        with:
+          name: gitleaks-report-${{ github.sha }}
+          path: gate-reports/secrets
+
+      - name: Descargar cobertura
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results-${{ github.sha }}
+          path: gate-reports/tests
+
+      - name: Descargar SAST
+        uses: actions/download-artifact@v4
+        with:
+          name: sast-report-${{ github.sha }}
+          path: gate-reports/sast
+
+      - name: Descargar SCA
+        uses: actions/download-artifact@v4
+        with:
+          name: sca-reports-${{ github.sha }}
+          path: gate-reports/sca
+
+      - name: Descargar DAST
+        uses: actions/download-artifact@v4
+        with:
+          name: ci-dast-report-${{ github.sha }}
+          path: gate-reports/dast
+
+      - name: Normalizar reportes del mismo run
+        run: |
+          mkdir -p gate-output
+          python scripts/gate_input.py gate-reports \
+            > gate-output/input.json
+          cat gate-output/input.json
+
+      - name: Ejecutar pruebas de politica
+        run: |
+          docker run --rm \
+            -v "$PWD:/work:ro" \
+            openpolicyagent/opa:1.0.0-static \
+            test \
+            /work/policies/security-policy-v1.rego \
+            /work/policies/security-policy-v1_test.rego \
+            -v
+
+      - name: Registrar decision y motivos
+        run: |
+          docker run --rm \
+            -v "$PWD:/work:ro" \
+            openpolicyagent/opa:1.0.0-static \
+            eval \
+            --format pretty \
+            -d /work/policies/security-policy-v1.rego \
+            -i /work/gate-output/input.json \
+            'data.securepipeline.gate' \
+            > gate-output/decision.txt
+
+          cat gate-output/decision.txt
+
+      - name: Bloquear si la politica no permite continuar
+        run: |
+          docker run --rm \
+            -v "$PWD:/work:ro" \
+            openpolicyagent/opa:1.0.0-static \
+            eval --fail \
+            -d /work/policies/security-policy-v1.rego \
+            -i /work/gate-output/input.json \
+            'data.securepipeline.gate.allow == true'
+
+      - name: Guardar evidencia del gate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-gate-${{ github.sha }}
+          path: gate-output/
+          retention-days: 14
+          if-no-files-found: error
+
   approval:
     name: Aprobación de seguridad
     needs: sca
@@ -223,34 +388,37 @@ jobs:
     runs-on: ubuntu-latest
     environment: security-approval
     steps:
-      - run: echo "Aprobado por revisor de seguridad — ver reports/securebank-vulns.md"
+      - run: echo "Aprobado por revisor de seguridad"
 
-  # ───────────────────────── ETAPA 6 · PACKAGE ─────────────────────────
   package:
     name: Package
-    needs: [sca, approval]
-    # corre aunque 'approval' se omita (no hubo CVE alto), pero nunca si algo falló
-    if: ${{ !failure() && !cancelled() }}
+    needs: [sca, approval, security-gate]
+    if: >-
+      ${{
+        !cancelled() &&
+        needs.sca.result == 'success' &&
+        needs.security-gate.result == 'success' &&
+        (
+          needs.approval.result == 'success' ||
+          needs.approval.result == 'skipped'
+        )
+      }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Build distributable artifact
+      - name: Construir paquete
         run: |
           mkdir -p dist
           zip -r "dist/securebank-api-${{ github.sha }}.zip" \
             securebank_api requirements.txt README.md \
             -x "**/__pycache__/*"
 
-      # Artefacto nombrado con hash de commit, retención mínima 7 días
-      # (checklist de aceptación de la Sesión 04).
-      - name: Upload artifact
+      - name: Guardar paquete
         uses: actions/upload-artifact@v4
         with:
           name: dist-${{ github.sha }}
