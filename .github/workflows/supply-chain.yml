@@ -1,0 +1,200 @@
+name: Supply Chain - Sesion 13
+
+on:
+  push:
+    branches:
+      - main
+      - feature/sesion-13-supply-chain
+
+permissions:
+  contents: read
+
+jobs:
+  supply-chain:
+    name: Publicar, firmar y verificar imagen
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    env:
+      REPORT_DIRECTORY: reports/supply-chain
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Cosign
+        uses: sigstore/cosign-installer@v4.1.0
+        with:
+          cosign-release: v3.0.5
+
+      - name: Preparar referencias y evidencias
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p "$REPORT_DIRECTORY"
+
+          IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
+          IMAGE_TAG="${IMAGE_NAME}:${GITHUB_SHA}"
+
+          EXPECTED_IDENTITY="https://github.com/${GITHUB_REPOSITORY}/.github/workflows/supply-chain.yml@${GITHUB_REF}"
+
+          echo "IMAGE_NAME=$IMAGE_NAME" >> "$GITHUB_ENV"
+          echo "IMAGE_TAG=$IMAGE_TAG" >> "$GITHUB_ENV"
+          echo "EXPECTED_IDENTITY=$EXPECTED_IDENTITY" >> "$GITHUB_ENV"
+
+          printf '%s\n' "$GITHUB_SHA" \
+            > "$REPORT_DIRECTORY/commit.txt"
+
+          printf '%s\n' "$EXPECTED_IDENTITY" \
+            > "$REPORT_DIRECTORY/signer-identity.txt"
+
+          date -u +"%Y-%m-%dT%H:%M:%SZ" \
+            > "$REPORT_DIRECTORY/date.txt"
+
+          cosign version \
+            > "$REPORT_DIRECTORY/cosign-version.txt"
+
+      - name: Autenticar en GHCR
+        shell: bash
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          printf '%s' "$REGISTRY_TOKEN" |
+            docker login ghcr.io \
+              --username "$GITHUB_ACTOR" \
+              --password-stdin
+
+      - name: Construir y publicar imagen
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          docker build \
+            --pull \
+            --file docker/Dockerfile.v2 \
+            --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+            --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
+            --tag "$IMAGE_TAG" \
+            .
+
+          docker push "$IMAGE_TAG"
+
+          IMAGE_DIGEST="$(
+            docker image inspect \
+              --format '{{index .RepoDigests 0}}' \
+              "$IMAGE_TAG"
+          )"
+
+          if [[ ! "$IMAGE_DIGEST" =~ ^ghcr\.io/[a-z0-9._/-]+@sha256:[a-f0-9]{64}$ ]]; then
+            echo "ERROR: no se obtuvo una referencia valida con digest." >&2
+            exit 1
+          fi
+
+          echo "IMAGE_DIGEST=$IMAGE_DIGEST" >> "$GITHUB_ENV"
+
+          printf '%s\n' "$IMAGE_DIGEST" \
+            > "$REPORT_DIRECTORY/image-digest.txt"
+
+      - name: Generar SBOM CycloneDX con Syft
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.IMAGE_DIGEST }}
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
+          format: cyclonedx-json
+          output-file: reports/supply-chain/sbom.cdx.json
+          artifact-name: sbom-sesion-13
+          upload-release-assets: false
+
+      - name: Validar estructura del SBOM
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("reports/supply-chain/sbom.cdx.json")
+          sbom = json.loads(path.read_text())
+
+          if sbom.get("bomFormat") != "CycloneDX":
+              raise SystemExit("ERROR: el SBOM no es CycloneDX.")
+
+          components = sbom.get("components")
+
+          if not isinstance(components, list) or not components:
+              raise SystemExit("ERROR: el SBOM no contiene componentes.")
+
+          print(f"PASS: SBOM CycloneDX con {len(components)} componentes.")
+          PY
+
+      - name: Firmar digest con identidad de GitHub Actions
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cosign sign \
+            --yes \
+            "$IMAGE_DIGEST" \
+            2>&1 | tee "$REPORT_DIRECTORY/signing.log"
+
+      - name: Firmar attestation del SBOM
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cosign attest \
+            --yes \
+            --type cyclonedx \
+            --predicate "$REPORT_DIRECTORY/sbom.cdx.json" \
+            "$IMAGE_DIGEST" \
+            2>&1 | tee "$REPORT_DIRECTORY/attestation.log"
+
+      - name: Verificacion obligatoria de firma y SBOM
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          bash scripts/verify_supply_chain.sh \
+            "$IMAGE_DIGEST" \
+            "$EXPECTED_IDENTITY" \
+            "$REPORT_DIRECTORY/verification" \
+            2>&1 | tee "$REPORT_DIRECTORY/verification.log"
+
+      - name: Registrar resultado verificado
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          {
+            echo "## Supply Chain - Sesion 13"
+            echo
+            echo "Firma y attestation CycloneDX verificadas."
+            echo
+            printf '**Imagen:** `%s`\n\n' "$IMAGE_DIGEST"
+            printf '**Identidad:** `%s`\n\n' "$EXPECTED_IDENTITY"
+            echo "La verificacion obligatoria finalizo correctamente."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar evidencias
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: supply-chain-${{ github.sha }}
+          path: reports/supply-chain/
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Cerrar sesion del registro
+        if: always()
+        shell: bash
+        run: docker logout ghcr.io
