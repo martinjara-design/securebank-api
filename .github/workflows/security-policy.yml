@@ -1,0 +1,45 @@
+name: Security Policy - Sesion 9
+
+on:
+  push:
+    branches:
+      - feature/sesion-09-security-gates
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  policy-tests:
+    name: Pruebas de politica OPA
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Ejecutar pruebas OPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports/policy
+
+          docker run --rm \
+            -v "$PWD:/work:ro" \
+            openpolicyagent/opa:1.0.0-static \
+            test \
+            /work/policies/security-policy-v1.rego \
+            /work/policies/security-policy-v1_test.rego \
+            -v 2>&1 | tee reports/policy/opa-tests.txt
+
+      - name: Guardar resultados
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pruebas-politica-opa
+          path: reports/policy/opa-tests.txt
+          retention-days: 14
+          if-no-files-found: error
