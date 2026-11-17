@@ -1,0 +1,144 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.v1
+#1 transferring dockerfile: 473B 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.11-bookworm
+#2 ...
+
+#3 [auth] library/python:pull token for registry-1.docker.io
+#3 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.11-bookworm
+#2 DONE 0.9s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 262B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 20.53kB done
+#5 DONE 0.0s
+
+#6 [1/5] FROM docker.io/library/python:3.11-bookworm@sha256:726d304906fa5eb468e5531e366548d1903286352f5adb54ef508ac01fbd80c6
+#6 resolve docker.io/library/python:3.11-bookworm@sha256:726d304906fa5eb468e5531e366548d1903286352f5adb54ef508ac01fbd80c6 0.0s done
+#6 sha256:6bf0df67895d21f07d8cb09e99b34b3e2990924d828939d3a9b34233a440e0ca 251B / 251B 0.1s done
+#6 sha256:be828f51e8d9988d8b228d0316d253e9a5cf6e7c448ba1618cf37450e8aec9e3 5.24MB / 24.18MB 0.2s
+#6 sha256:2f6c569d35ffc6a01454df87902bfaec7b3e6a8c285869319eedbbc9c6639a93 0B / 6.16MB 0.2s
+#6 sha256:9bab93d346cda15207e5a5000093cee7256ec1092fb689ec3d2997faf31b9a16 0B / 211.83MB 0.2s
+#6 sha256:d6c30932f8d3f5798b438cce12cdf6cebb1717b52f51e22ff010b4d86667031d 3.15MB / 64.43MB 0.2s
+#6 sha256:be828f51e8d9988d8b228d0316d253e9a5cf6e7c448ba1618cf37450e8aec9e3 24.18MB / 24.18MB 0.3s
+#6 sha256:2f6c569d35ffc6a01454df87902bfaec7b3e6a8c285869319eedbbc9c6639a93 6.16MB / 6.16MB 0.3s done
+#6 sha256:9bab93d346cda15207e5a5000093cee7256ec1092fb689ec3d2997faf31b9a16 26.21MB / 211.83MB 0.3s
+#6 sha256:be828f51e8d9988d8b228d0316d253e9a5cf6e7c448ba1618cf37450e8aec9e3 24.18MB / 24.18MB 0.4s done
+#6 sha256:9bab93d346cda15207e5a5000093cee7256ec1092fb689ec3d2997faf31b9a16 57.67MB / 211.83MB 0.5s
+#6 sha256:d6c30932f8d3f5798b438cce12cdf6cebb1717b52f51e22ff010b4d86667031d 29.36MB / 64.43MB 0.3s
+#6 sha256:9bab93d346cda15207e5a5000093cee7256ec1092fb689ec3d2997faf31b9a16 105.91MB / 211.83MB 0.6s
+#6 sha256:d6c30932f8d3f5798b438cce12cdf6cebb1717b52f51e22ff010b4d86667031d 64.43MB / 64.43MB 0.5s
+#6 sha256:338554e9113fa6731ba588cb8f45e85b3e3fe7ada531ee7d7b0bc9291d616727 22.02MB / 23.87MB 0.2s
+#6 sha256:69245854ad5855991d16224f6abf55855d2d73922785206adea9c5c5988434a0 16.78MB / 48.53MB 0.2s
+#6 sha256:9bab93d346cda15207e5a5000093cee7256ec1092fb689ec3d2997faf31b9a16 171.97MB / 211.83MB 0.8s
+#6 sha256:338554e9113fa6731ba588cb8f45e85b3e3fe7ada531ee7d7b0bc9291d616727 23.87MB / 23.87MB 0.3s
+#6 sha256:69245854ad5855991d16224f6abf55855d2d73922785206adea9c5c5988434a0 48.53MB / 48.53MB 0.3s
+#6 sha256:9bab93d346cda15207e5a5000093cee7256ec1092fb689ec3d2997faf31b9a16 211.83MB / 211.83MB 0.9s
+#6 sha256:d6c30932f8d3f5798b438cce12cdf6cebb1717b52f51e22ff010b4d86667031d 64.43MB / 64.43MB 0.9s done
+#6 sha256:338554e9113fa6731ba588cb8f45e85b3e3fe7ada531ee7d7b0bc9291d616727 23.87MB / 23.87MB 0.7s done
+#6 sha256:9bab93d346cda15207e5a5000093cee7256ec1092fb689ec3d2997faf31b9a16 211.83MB / 211.83MB 2.1s done
+#6 sha256:69245854ad5855991d16224f6abf55855d2d73922785206adea9c5c5988434a0 48.53MB / 48.53MB 1.6s done
+#6 extracting sha256:69245854ad5855991d16224f6abf55855d2d73922785206adea9c5c5988434a0
+#6 extracting sha256:69245854ad5855991d16224f6abf55855d2d73922785206adea9c5c5988434a0 0.9s done
+#6 DONE 3.1s
+
+#6 [1/5] FROM docker.io/library/python:3.11-bookworm@sha256:726d304906fa5eb468e5531e366548d1903286352f5adb54ef508ac01fbd80c6
+#6 extracting sha256:338554e9113fa6731ba588cb8f45e85b3e3fe7ada531ee7d7b0bc9291d616727
+#6 extracting sha256:338554e9113fa6731ba588cb8f45e85b3e3fe7ada531ee7d7b0bc9291d616727 0.3s done
+#6 DONE 3.3s
+
+#6 [1/5] FROM docker.io/library/python:3.11-bookworm@sha256:726d304906fa5eb468e5531e366548d1903286352f5adb54ef508ac01fbd80c6
+#6 extracting sha256:d6c30932f8d3f5798b438cce12cdf6cebb1717b52f51e22ff010b4d86667031d
+#6 extracting sha256:d6c30932f8d3f5798b438cce12cdf6cebb1717b52f51e22ff010b4d86667031d 1.1s done
+#6 DONE 4.4s
+
+#6 [1/5] FROM docker.io/library/python:3.11-bookworm@sha256:726d304906fa5eb468e5531e366548d1903286352f5adb54ef508ac01fbd80c6
+#6 extracting sha256:9bab93d346cda15207e5a5000093cee7256ec1092fb689ec3d2997faf31b9a16
+#6 extracting sha256:9bab93d346cda15207e5a5000093cee7256ec1092fb689ec3d2997faf31b9a16 2.8s done
+#6 DONE 7.2s
+
+#6 [1/5] FROM docker.io/library/python:3.11-bookworm@sha256:726d304906fa5eb468e5531e366548d1903286352f5adb54ef508ac01fbd80c6
+#6 extracting sha256:2f6c569d35ffc6a01454df87902bfaec7b3e6a8c285869319eedbbc9c6639a93 0.1s done
+#6 DONE 7.4s
+
+#6 [1/5] FROM docker.io/library/python:3.11-bookworm@sha256:726d304906fa5eb468e5531e366548d1903286352f5adb54ef508ac01fbd80c6
+#6 extracting sha256:be828f51e8d9988d8b228d0316d253e9a5cf6e7c448ba1618cf37450e8aec9e3
+#6 extracting sha256:be828f51e8d9988d8b228d0316d253e9a5cf6e7c448ba1618cf37450e8aec9e3 0.4s done
+#6 DONE 7.8s
+
+#6 [1/5] FROM docker.io/library/python:3.11-bookworm@sha256:726d304906fa5eb468e5531e366548d1903286352f5adb54ef508ac01fbd80c6
+#6 extracting sha256:6bf0df67895d21f07d8cb09e99b34b3e2990924d828939d3a9b34233a440e0ca 0.0s done
+#6 DONE 7.8s
+
+#7 [2/5] WORKDIR /app
+#7 DONE 5.7s
+
+#8 [3/5] COPY requirements.txt .
+#8 DONE 0.0s
+
+#9 [4/5] RUN pip install -r requirements.txt
+#9 1.201 Collecting Flask==3.1.3 (from -r requirements.txt (line 1))
+#9 1.241   Downloading flask-3.1.3-py3-none-any.whl.metadata (3.2 kB)
+#9 1.272 Collecting PyJWT==2.15.0 (from -r requirements.txt (line 2))
+#9 1.275   Downloading pyjwt-2.15.0-py3-none-any.whl.metadata (3.5 kB)
+#9 1.327 Collecting bcrypt==4.2.0 (from -r requirements.txt (line 3))
+#9 1.331   Downloading bcrypt-4.2.0-cp39-abi3-manylinux_2_28_x86_64.whl.metadata (9.6 kB)
+#9 1.407 Collecting MarkupSafe==2.1.5 (from -r requirements.txt (line 4))
+#9 1.410   Downloading MarkupSafe-2.1.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (3.0 kB)
+#9 1.439 Collecting gunicorn==27.0.1 (from -r requirements.txt (line 5))
+#9 1.443   Downloading gunicorn-27.0.1-py3-none-any.whl.metadata (5.6 kB)
+#9 1.467 Collecting blinker>=1.9.0 (from Flask==3.1.3->-r requirements.txt (line 1))
+#9 1.470   Downloading blinker-1.9.0-py3-none-any.whl.metadata (1.6 kB)
+#9 1.498 Collecting click>=8.1.3 (from Flask==3.1.3->-r requirements.txt (line 1))
+#9 1.501   Downloading click-8.5.1-py3-none-any.whl.metadata (2.6 kB)
+#9 1.523 Collecting itsdangerous>=2.2.0 (from Flask==3.1.3->-r requirements.txt (line 1))
+#9 1.526   Downloading itsdangerous-2.2.0-py3-none-any.whl.metadata (1.9 kB)
+#9 1.551 Collecting jinja2>=3.1.2 (from Flask==3.1.3->-r requirements.txt (line 1))
+#9 1.555   Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+#9 1.588 Collecting werkzeug>=3.1.0 (from Flask==3.1.3->-r requirements.txt (line 1))
+#9 1.592   Downloading werkzeug-3.1.9-py3-none-any.whl.metadata (4.1 kB)
+#9 1.615 Downloading flask-3.1.3-py3-none-any.whl (103 kB)
+#9 1.621    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 103.4/103.4 kB 26.9 MB/s eta 0:00:00
+#9 1.624 Downloading pyjwt-2.15.0-py3-none-any.whl (33 kB)
+#9 1.629 Downloading bcrypt-4.2.0-cp39-abi3-manylinux_2_28_x86_64.whl (273 kB)
+#9 1.633    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 273.8/273.8 kB 93.2 MB/s eta 0:00:00
+#9 1.637 Downloading MarkupSafe-2.1.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (28 kB)
+#9 1.642 Downloading gunicorn-27.0.1-py3-none-any.whl (263 kB)
+#9 1.645    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 263.7/263.7 kB 99.6 MB/s eta 0:00:00
+#9 1.649 Downloading blinker-1.9.0-py3-none-any.whl (8.5 kB)
+#9 1.664 Downloading click-8.5.1-py3-none-any.whl (126 kB)
+#9 1.668    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 126.2/126.2 kB 57.3 MB/s eta 0:00:00
+#9 1.671 Downloading itsdangerous-2.2.0-py3-none-any.whl (16 kB)
+#9 1.676 Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+#9 1.679    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 134.9/134.9 kB 63.6 MB/s eta 0:00:00
+#9 1.682 Downloading werkzeug-3.1.9-py3-none-any.whl (228 kB)
+#9 1.686    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 228.7/228.7 kB 92.4 MB/s eta 0:00:00
+#9 1.751 Installing collected packages: PyJWT, MarkupSafe, itsdangerous, gunicorn, click, blinker, bcrypt, werkzeug, jinja2, Flask
+#9 2.142 Successfully installed Flask-3.1.3 MarkupSafe-2.1.5 PyJWT-2.15.0 bcrypt-4.2.0 blinker-1.9.0 click-8.5.1 gunicorn-27.0.1 itsdangerous-2.2.0 jinja2-3.1.6 werkzeug-3.1.9
+#9 2.143 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+#9 2.247 
+#9 2.247 [notice] A new release of pip is available: 24.0 -> 26.3
+#9 2.247 [notice] To update, run: pip install --upgrade pip
+#9 DONE 2.4s
+
+#10 [5/5] COPY securebank_api/ ./securebank_api/
+#10 DONE 0.0s
+
+#11 exporting to image
+#11 exporting layers
+#11 exporting layers 0.3s done
+#11 exporting manifest sha256:5211b71935180a887c0ac17eaf7c56852b707c7ecff3a011474ec2c77041ee7d done
+#11 exporting config sha256:f0e1c3fda9971a80f6aa54764a5d8aaedbcf465b721e6efedc9a1a1944beedf2 done
+#11 exporting attestation manifest sha256:1fc83040be2aae02d01ab05cc99617ec49fe65da37d8c740f1dda65e08f816b1 done
+#11 exporting manifest list sha256:14c9e83168ee38f6169650369575ed9a5572dc5f9e794c3c164a0a6afb1848af done
+#11 naming to docker.io/library/securebank:v1 done
+#11 unpacking to docker.io/library/securebank:v1 0.1s done
+#11 DONE 0.5s

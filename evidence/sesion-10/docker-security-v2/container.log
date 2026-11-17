@@ -1,0 +1,5 @@
+[2026-11-17 05:30:30 +0000] [1] [INFO] Starting gunicorn 27.0.1
+[2026-11-17 05:30:30 +0000] [1] [INFO] Listening at: http://0.0.0.0:8080 (1)
+[2026-11-17 05:30:30 +0000] [1] [INFO] Using worker: sync
+[2026-11-17 05:30:30 +0000] [7] [INFO] Booting worker with pid: 7
+[2026-11-17 05:30:30 +0000] [1] [ERROR] Control server error: [Errno 30] Read-only file system: '/home/appuser'

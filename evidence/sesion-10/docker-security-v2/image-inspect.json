@@ -1,0 +1,75 @@
+[
+    {
+        "Id": "sha256:0d81b1d101e20099a7e05bffc53a56d82638479081354310969e046508728582",
+        "RepoTags": [
+            "securebank:v2-secure"
+        ],
+        "RepoDigests": [
+            "securebank@sha256:0d81b1d101e20099a7e05bffc53a56d82638479081354310969e046508728582"
+        ],
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2026-11-17T05:30:28.278394357Z",
+        "Config": {
+            "User": "10001:10001",
+            "ExposedPorts": {
+                "8080/tcp": {}
+            },
+            "Env": [
+                "PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "LANG=C.UTF-8",
+                "GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D",
+                "PYTHON_VERSION=3.11.18",
+                "PYTHON_SHA256=9120e0a653868f6e3698d36cdd99e5a58903ec9469e448f21d98f7b16d8fa290",
+                "PYTHONDONTWRITEBYTECODE=1",
+                "PYTHONUNBUFFERED=1"
+            ],
+            "Cmd": [
+                "gunicorn",
+                "--bind",
+                "0.0.0.0:8080",
+                "--workers",
+                "1",
+                "--threads",
+                "1",
+                "--worker-tmp-dir",
+                "/tmp",
+                "securebank_api.app:app"
+            ],
+            "WorkingDir": "/app",
+            "ArgsEscaped": true
+        },
+        "Architecture": "amd64",
+        "Os": "linux",
+        "Size": 50362093,
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:1d7b9dd8778ebc4d9bf2f64436dd358640718cb349f5640b33bebaea4ffd62c2",
+                "sha256:9ae7def604682355f0b9a3468566bbb06aaae177e47a961444995169178590d2",
+                "sha256:bd3e172fa0bc2e7382210f6ffe9292e1ce66a4962721cc583787fe726d705f53",
+                "sha256:3306b96cb7baf10267980832b85ae4056efdc2b3dd659fa42d77af2f850e778d",
+                "sha256:1c8bb95fb0ef2ace2e46f82dee348ef4d6ccaeb3c02f4f1afb896fb0f279af82",
+                "sha256:75d43beca1bfb28578254d2c04ff075a580ce1f0ee71a32aa26df2f881e1c1d6",
+                "sha256:2c136b70818f76bd378529c8db902fdb2c25dbaaea885a7e2c92a51b249eef4f",
+                "sha256:84ff2da2deb7538cb0abb7ed67ddf2d3f204e57d5822d5b8d25d0dca1aa32a88",
+                "sha256:9d20bc76d4fa137e1e3fa11b5a38e8e3482432df2f397df30321f202a531e919"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2026-11-17T05:30:28.670221661Z"
+        },
+        "Descriptor": {
+            "mediaType": "application/vnd.oci.image.index.v1+json",
+            "digest": "sha256:0d81b1d101e20099a7e05bffc53a56d82638479081354310969e046508728582",
+            "size": 856
+        },
+        "Identity": {
+            "Build": [
+                {
+                    "Ref": "gckqbeh4cgc3dyllwysxpwyvy",
+                    "CreatedAt": "2026-11-17T05:30:28.811249656Z"
+                }
+            ]
+        }
+    }
+]
