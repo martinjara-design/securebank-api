@@ -9,14 +9,31 @@ CALICO_VERSION="v3.31.0"
 OUTPUT="reports/k8s"
 mkdir -p "$OUTPUT"
 
-# Registro disponible solo desde el runner y la red del laboratorio.
 docker run -d \
   --name "$REGISTRY_NAME" \
   --restart=always \
   -p "127.0.0.1:${REGISTRY_PORT}:5000" \
   registry:2.8.3
 
-# Desactivamos la red predeterminada de Kind para instalar Calico.
+# Comprobar que el registro responde desde el runner.
+REGISTRY_READY=false
+
+for ATTEMPT in {1..30}; do
+  if curl --fail --silent \
+    "http://127.0.0.1:${REGISTRY_PORT}/v2/" \
+    > "$OUTPUT/registry-health.json"
+  then
+    REGISTRY_READY=true
+    break
+  fi
+  sleep 1
+done
+
+if [ "$REGISTRY_READY" != "true" ]; then
+  docker logs "$REGISTRY_NAME"
+  exit 1
+fi
+
 cat > "$OUTPUT/kind-config.yaml" <<'YAML'
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -24,6 +41,13 @@ apiVersion: kind.x-k8s.io/v1alpha4
 networking:
   disableDefaultCNI: true
   podSubnet: "192.168.0.0/16"
+
+containerdConfigPatches:
+  - |-
+    [plugins."io.containerd.cri.v1.images"]
+      use_local_image_pull = true
+    [plugins."io.containerd.cri.v1.images".registry]
+      config_path = "/etc/containerd/certs.d"
 
 nodes:
   - role: control-plane
@@ -36,7 +60,6 @@ kind create cluster \
 
 kubectl config use-context "kind-${CLUSTER_NAME}"
 
-# Permitir que los nodos alcancen el registro local.
 docker network connect kind "$REGISTRY_NAME"
 
 REGISTRY_DIRECTORY="/etc/containerd/certs.d/localhost:${REGISTRY_PORT}"
@@ -44,14 +67,24 @@ REGISTRY_DIRECTORY="/etc/containerd/certs.d/localhost:${REGISTRY_PORT}"
 for NODE in $(kind get nodes --name "$CLUSTER_NAME"); do
   docker exec "$NODE" mkdir -p "$REGISTRY_DIRECTORY"
 
-  printf '%s\n' \
-    "[host.\"http://${REGISTRY_NAME}:5000\"]" \
-    '  capabilities = ["pull", "resolve"]' \
-    | docker exec -i "$NODE" \
-      cp /dev/stdin "$REGISTRY_DIRECTORY/hosts.toml"
+  # Definir el servidor real, evitando volver al localhost del nodo.
+  cat <<EOF | docker exec -i "$NODE" \
+    sh -c "cat > '$REGISTRY_DIRECTORY/hosts.toml'"
+server = "http://${REGISTRY_NAME}:5000"
+
+[host."http://${REGISTRY_NAME}:5000"]
+  capabilities = ["pull", "resolve"]
+EOF
+
+  # Registrar la configuracion utilizada para diagnosticos.
+  docker exec "$NODE" \
+    cat "$REGISTRY_DIRECTORY/hosts.toml" \
+    > "$OUTPUT/${NODE}-registry-hosts.toml"
+
+  docker exec "$NODE" containerd config dump \
+    > "$OUTPUT/${NODE}-containerd-config.toml"
 done
 
-# Instalar una version concreta de Calico.
 curl --fail --silent --show-error --location \
   "https://raw.githubusercontent.com/projectcalico/calico/${CALICO_VERSION}/manifests/calico.yaml" \
   --output "$OUTPUT/calico.yaml"
@@ -79,7 +112,6 @@ kubectl -n kube-system rollout status \
   deployment/coredns \
   --timeout=180s
 
-# Guardar evidencia sin copiar credenciales del cluster.
 kind version > "$OUTPUT/kind-version.txt"
 
 kubectl version -o yaml \
