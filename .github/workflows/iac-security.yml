@@ -9,6 +9,8 @@ on:
       - main
     paths:
       - terraform/**
+      - policies/iac-policy.json
+      - scripts/iac_gate.py
       - .github/workflows/iac-security.yml
 
 permissions:
@@ -23,9 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        stage:
-          - before
-          - after
+        stage: [before, after]
 
     env:
       STAGE: ${{ matrix.stage }}
@@ -43,13 +43,10 @@ jobs:
         run: pip install checkov==3.4.5
 
       - name: Registrar herramientas y fecha
-        shell: bash
         run: |
           mkdir -p "reports/iac/$STAGE"
-
           checkov --version \
             > "reports/iac/$STAGE/checkov-version.txt"
-
           date -u +"%Y-%m-%dT%H:%M:%SZ" \
             > "reports/iac/$STAGE/fecha.txt"
 
@@ -72,9 +69,6 @@ jobs:
           echo "$STATUS" \
             > "reports/iac/$STAGE/exit-code.txt"
 
-          # Esta etapa mide ambas configuraciones.
-          # El codigo 1 puede representar controles fallidos.
-          # El siguiente paso verifica el reporte y el parseo.
           if [ "$STATUS" -ne 0 ] && [ "$STATUS" -ne 1 ]; then
             cat "reports/iac/$STAGE/checkov-errors.txt"
             exit "$STATUS"
@@ -90,7 +84,6 @@ jobs:
 
           stage = os.environ["STAGE"]
           directory = Path("reports/iac") / stage
-
           report = json.loads(
               (directory / "checkov.json").read_text()
           )
@@ -123,10 +116,8 @@ jobs:
               f"| Controles fallidos | {failed} |\n"
               f"| Controles omitidos | {skipped} |\n"
               f"| Security Score | {score:.2f}% |\n\n"
-              "Formula: passed / (passed + failed) * 100.\n\n"
+              "Formula: passed / (passed + failed) * 100.\n"
               "Los controles omitidos se informan por separado.\n"
-              "Este workflow mide resultados; "
-              "todavia no aplica el gate de aprobacion IaC.\n"
           )
 
           (directory / "summary.md").write_text(text)
@@ -137,11 +128,153 @@ jobs:
           print(text)
           PY
 
-      - name: Guardar evidencias
+      - name: Guardar auditoria
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: iac-${{ matrix.stage }}
           path: reports/iac/${{ matrix.stage }}/
+          retention-days: 14
+          if-no-files-found: error
+
+  validate:
+    name: Validar Terraform ${{ matrix.stage }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        stage: [before, after]
+
+    env:
+      STAGE: ${{ matrix.stage }}
+      TF_IN_AUTOMATION: "true"
+      AWS_EC2_METADATA_DISABLED: "true"
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.13.5"
+          terraform_wrapper: false
+
+      - name: Inicializar sin backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "reports/terraform/$STAGE"
+
+          terraform version -json \
+            > "reports/terraform/$STAGE/terraform-version.json"
+
+          terraform -chdir="terraform/$STAGE" init \
+            -backend=false \
+            -input=false \
+            -no-color \
+            2>&1 | tee "reports/terraform/$STAGE/init.txt"
+
+          cp "terraform/$STAGE/.terraform.lock.hcl" \
+            "reports/terraform/$STAGE/provider-lock.hcl"
+
+      - name: Validar configuracion
+        shell: bash
+        run: |
+          if ! terraform -chdir="terraform/$STAGE" validate \
+            -json > "reports/terraform/$STAGE/validate.json"
+          then
+            cat "reports/terraform/$STAGE/validate.json"
+            exit 1
+          fi
+
+          cat "reports/terraform/$STAGE/validate.json"
+
+      - name: Guardar validacion
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-validation-${{ matrix.stage }}
+          path: reports/terraform/${{ matrix.stage }}/
+          retention-days: 14
+          if-no-files-found: error
+
+  iac-gate:
+    name: Gate IaC obligatorio
+    needs: [audit, validate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Descargar reporte inicial
+        uses: actions/download-artifact@v4
+        with:
+          name: iac-before
+          path: gate-reports/before
+
+      - name: Descargar reporte corregido
+        uses: actions/download-artifact@v4
+        with:
+          name: iac-after
+          path: gate-reports/after
+
+      - name: Verificar rechazo de configuracion inicial
+        shell: bash
+        run: |
+          mkdir -p reports/iac-gate
+
+          if python scripts/iac_gate.py \
+            gate-reports/before/checkov.json \
+            policies/iac-policy.json \
+            reports/iac-gate/before-decision.json
+          then
+            echo "ERROR: la configuracion inicial no debia aprobar."
+            exit 1
+          fi
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          decision = json.loads(
+              Path(
+                  "reports/iac-gate/before-decision.json"
+              ).read_text()
+          )
+
+          if decision.get("allow") is not False:
+              raise SystemExit("No se registro el rechazo esperado")
+
+          if "score" not in decision:
+              raise SystemExit(
+                  "La entrada fallo por formato, no por la politica"
+              )
+
+          print("PASS: la politica rechazo la configuracion inicial")
+          PY
+
+      - name: Exigir aprobacion de configuracion corregida
+        run: |
+          python scripts/iac_gate.py \
+            gate-reports/after/checkov.json \
+            policies/iac-policy.json \
+            reports/iac-gate/after-decision.json
+
+      - name: Guardar decisiones del gate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iac-gate
+          path: reports/iac-gate/
           retention-days: 14
           if-no-files-found: error
