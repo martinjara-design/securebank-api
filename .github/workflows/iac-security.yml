@@ -1,0 +1,127 @@
+name: IaC Security - Sesion 11
+
+on:
+  push:
+    branches:
+      - feature/sesion-11-iac-security
+  pull_request:
+    branches:
+      - main
+    paths:
+      - terraform/**
+      - .github/workflows/iac-security.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit-before:
+    name: Auditoria inicial Terraform
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar Checkov
+        run: pip install checkov==3.4.5
+
+      - name: Registrar herramientas y fecha
+        run: |
+          mkdir -p reports/iac/before
+          checkov --version > reports/iac/before/checkov-version.txt
+          date -u +"%Y-%m-%dT%H:%M:%SZ" \
+            > reports/iac/before/fecha.txt
+
+      - name: Analizar configuracion inicial
+        shell: bash
+        run: |
+          set +e
+
+          checkov \
+            -d terraform/before \
+            --framework terraform \
+            --skip-download \
+            --output json \
+            > reports/iac/before/checkov.json \
+            2> reports/iac/before/checkov-errors.txt
+
+          STATUS=$?
+          set -e
+
+          echo "$STATUS" > reports/iac/before/exit-code.txt
+
+          # En la medicion inicial se esperan controles fallidos.
+          # Otros codigos de salida se consideran errores.
+          if [ "$STATUS" -ne 0 ] && [ "$STATUS" -ne 1 ]; then
+            cat reports/iac/before/checkov-errors.txt
+            exit "$STATUS"
+          fi
+
+      - name: Calcular Security Score inicial
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          directory = Path("reports/iac/before")
+          report = json.loads(
+              (directory / "checkov.json").read_text()
+          )
+
+          if not isinstance(report, dict):
+              raise SystemExit("Formato de reporte inesperado")
+
+          summary = report["summary"]
+
+          if summary.get("parsing_errors", 0):
+              raise SystemExit("Checkov detecto errores de parseo")
+
+          passed = int(summary["passed"])
+          failed = int(summary["failed"])
+          skipped = int(summary["skipped"])
+          total = passed + failed
+
+          if total == 0:
+              raise SystemExit("No se evaluaron controles")
+
+          score = passed / total * 100
+
+          text = (
+              "# Auditoria inicial Terraform\n\n"
+              "| Medicion | Resultado |\n"
+              "|---|---:|\n"
+              f"| Controles aprobados | {passed} |\n"
+              f"| Controles fallidos | {failed} |\n"
+              f"| Controles omitidos | {skipped} |\n"
+              f"| Security Score | {score:.2f}% |\n\n"
+              "Formula: passed / (passed + failed) * 100.\n\n"
+              "Los controles omitidos se informan por separado.\n"
+              "Este resultado es la medicion inicial, "
+              "no una aprobacion para desplegar.\n"
+          )
+
+          (directory / "summary.md").write_text(text)
+
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as output:
+              output.write(text)
+
+          print(text)
+          PY
+
+      - name: Guardar evidencias iniciales
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iac-before
+          path: reports/iac/before/
+          retention-days: 14
+          if-no-files-found: error
