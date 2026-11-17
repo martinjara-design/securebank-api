@@ -34,6 +34,9 @@ def create_app() -> Flask:
             "base-uri 'none'; "
             "form-action 'none'"
         )
+        response.headers["Permissions-Policy"] = (
+            "camera=(), microphone=(), geolocation=()"
+        )
         return response
 
     @app.get("/health")
