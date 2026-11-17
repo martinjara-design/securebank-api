@@ -370,7 +370,7 @@ jobs:
             eval --fail \
             -d /work/policies/security-policy-v1.rego \
             -i /work/gate-output/input.json \
-            'data.securepipeline.gate.allow == true'
+            'data.securepipeline.gate.allow = true'
 
       - name: Guardar evidencia del gate
         if: always()
