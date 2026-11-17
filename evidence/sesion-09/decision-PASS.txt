@@ -1,0 +1,14 @@
+{
+  "allow": true,
+  "deny": [],
+  "required": [
+    "coverage",
+    "critical",
+    "dast_high",
+    "high",
+    "internet_exposed",
+    "medium",
+    "secrets"
+  ],
+  "valid_metrics": true
+}

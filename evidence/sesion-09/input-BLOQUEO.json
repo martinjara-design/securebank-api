@@ -1,0 +1,9 @@
+{
+  "critical": 0,
+  "high": 0,
+  "medium": 0,
+  "secrets": 1,
+  "coverage": 88.03,
+  "internet_exposed": false,
+  "dast_high": 0
+}
