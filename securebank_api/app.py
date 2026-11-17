@@ -20,13 +20,15 @@ def create_app() -> Flask:
     app.register_blueprint(view.bp)
     app.register_blueprint(calc.bp)
 
-    @app.after_request
+        @app.after_request
     def set_security_headers(response):
-        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=63072000; includeSubDomains"
+        )
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "no-referrer"
-                response.headers["Content-Security-Policy"] = (
+        response.headers["Content-Security-Policy"] = (
             "default-src 'none'; "
             "frame-ancestors 'none'; "
             "base-uri 'none'; "
