@@ -1,0 +1,150 @@
+{
+  "apiVersion": "kyverno.io/v1",
+  "kind": "ClusterPolicy",
+  "metadata": {
+    "name": "securebank-signed-images",
+    "annotations": {
+      "pod-policies.kyverno.io/autogen-controllers": "none"
+    }
+  },
+  "spec": {
+    "validationFailureAction": "Enforce",
+    "background": false,
+    "webhookConfiguration": {
+      "failurePolicy": "Fail",
+      "timeoutSeconds": 30
+    },
+    "rules": [
+      {
+        "name": "verify-signature-and-sbom",
+        "match": {
+          "any": [
+            {
+              "resources": {
+                "kinds": [
+                  "Pod"
+                ],
+                "namespaces": [
+                  "securebank"
+                ]
+              }
+            }
+          ]
+        },
+        "verifyImages": [
+          {
+            "imageReferences": [
+              "ghcr.io/martinjara-design/securebank-api*"
+            ],
+            "type": "Cosign",
+            "required": true,
+            "verifyDigest": true,
+            "mutateDigest": false,
+            "imageRegistryCredentials": {
+              "secrets": [
+                "ghcr-read"
+              ]
+            },
+            "attestors": [
+              {
+                "count": 1,
+                "entries": [
+                  {
+                    "keyless": {
+                      "subject": "https://github.com/martinjara-design/securebank-api/.github/workflows/supply-chain.yml@refs/heads/main",
+                      "issuer": "https://token.actions.githubusercontent.com",
+                      "rekor": {
+                        "url": "https://rekor.sigstore.dev"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "attestations": [
+              {
+                "predicateType": "https://cyclonedx.org/bom",
+                "attestors": [
+                  {
+                    "count": 1,
+                    "entries": [
+                      {
+                        "keyless": {
+                          "subject": "https://github.com/martinjara-design/securebank-api/.github/workflows/supply-chain.yml@refs/heads/main",
+                          "issuer": "https://token.actions.githubusercontent.com",
+                          "rekor": {
+                            "url": "https://rekor.sigstore.dev"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+---
+{
+  "apiVersion": "kyverno.io/v1",
+  "kind": "ClusterPolicy",
+  "metadata": {
+    "name": "securebank-trusted-registry",
+    "annotations": {
+      "pod-policies.kyverno.io/autogen-controllers": "none"
+    }
+  },
+  "spec": {
+    "validationFailureAction": "Enforce",
+    "background": false,
+    "webhookConfiguration": {
+      "failurePolicy": "Fail",
+      "timeoutSeconds": 30
+    },
+    "rules": [
+      {
+        "name": "require-trusted-registry-and-digest",
+        "match": {
+          "any": [
+            {
+              "resources": {
+                "kinds": [
+                  "Pod"
+                ],
+                "namespaces": [
+                  "securebank"
+                ]
+              }
+            }
+          ]
+        },
+        "validate": {
+          "message": "Solo se admiten imagenes SecureBank por digest.",
+          "pattern": {
+            "spec": {
+              "containers": [
+                {
+                  "image": "ghcr.io/martinjara-design/securebank-api@sha256:*"
+                }
+              ],
+              "=(initContainers)": [
+                {
+                  "image": "ghcr.io/martinjara-design/securebank-api@sha256:*"
+                }
+              ],
+              "=(ephemeralContainers)": [
+                {
+                  "image": "ghcr.io/martinjara-design/securebank-api@sha256:*"
+                }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  }
+}

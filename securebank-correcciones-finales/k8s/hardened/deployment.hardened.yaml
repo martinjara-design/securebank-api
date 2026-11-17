@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: securebank-api
+  namespace: securebank
+  labels:
+    app: securebank-api
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: securebank-api
+
+  template:
+    metadata:
+      labels:
+        app: securebank-api
+
+    spec:
+      serviceAccountName: securebank-api
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      imagePullSecrets:
+        - name: ghcr-read
+
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: api
+
+          # Imagen de referencia publicada y verificada en la sesion 13.
+          image: ghcr.io/martinjara-design/securebank-api@sha256:7e1736dcb45a2e33b29c80fd2c23403f0f21e8c8685d2e904533ed6c45c5a837
+          imagePullPolicy: Always
+
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+
+          env:
+            - name: SECUREBANK_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: securebank-secrets
+                  key: jwt-secret
+
+          securityContext:
+            privileged: false
+            runAsNonRoot: true
+            runAsUser: 10001
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 2
+            timeoutSeconds: 2
+            failureThreshold: 30
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 6
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          volumeMounts:
+            - name: temporary-files
+              mountPath: /tmp
+
+      volumes:
+        - name: temporary-files
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi

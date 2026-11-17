@@ -1,0 +1,26 @@
+{
+  "scope": "aws-lab",
+  "allow": true,
+  "score": 99.3,
+  "resources": 47,
+  "passed": 141,
+  "failed": 1,
+  "skipped": 0,
+  "unexpected_failures": [],
+  "severity_counts": {
+    "CRITICAL": 0,
+    "HIGH": 0,
+    "MEDIUM": 1,
+    "LOW": 0
+  },
+  "classified_failures": [
+    {
+      "check_id": "CKV_AWS_145",
+      "resource": "aws_s3_bucket.logs",
+      "severity": "MEDIUM",
+      "source": "politica-contextual-del-equipo"
+    }
+  ],
+  "severity_note": "Clasificacion contextual del equipo cuando Checkov no proporciona severidad; no es una severidad oficial del scanner.",
+  "deny": []
+}
