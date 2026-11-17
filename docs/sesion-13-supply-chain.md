@@ -88,3 +88,12 @@ Una firma válida acredita procedencia e integridad respecto del
 firmante; no garantiza ausencia de vulnerabilidades ni que el
 contenido del SBOM sea completo. Los controles SAST, SCA, DAST
 y de imágenes siguen siendo necesarios.
+
+## Corrección de cierre: despliegue y admisión
+
+El codigo actualizado exige primero todos los controles de `ci.yml` como workflow reusable e integra la verificacion con `kubectl apply` en un laboratorio Kind. Kyverno 1.19.2 (chart 3.9.2) exige registro autorizado, digest, firma keyless de identidad exacta y attestation CycloneDX. Se usa el formato compatible de Cosign 3.0.5 para interoperar con el verificador del controlador sin desactivar el transparency log.
+
+El mismo workflow comprueba la salud del Deployment firmado y el rechazo real de un Pod con imagen publicada sin firma. El rechazo esperado se registra como prueba aprobada dentro de la ejecución normal; una aceptación indebida falla el workflow. Las ejecuciones históricas siguen siendo evidencia de CI, no de esta nueva admisión.
+
+Análisis del caso de máximo una página: `sesion-13-analisis.pdf`.
+La corrección debe ejecutarse y revisarse en Actions antes de declarar probado el despliegue con admisión.

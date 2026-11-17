@@ -80,16 +80,10 @@ resource "aws_iam_instance_profile" "api" {
   role = aws_iam_role.api.name
 }
 
-resource "aws_iam_openid_connect_provider" "github" {
+# El proveedor OIDC ya existe para que el rol de bootstrap del workflow funcione.
+# Consultarlo evita intentar crearlo por segunda vez durante apply.
+data "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
-
-  client_id_list = [
-    "sts.amazonaws.com",
-  ]
-
-  tags = {
-    Name = "securebank-lab-github-oidc"
-  }
 }
 
 resource "aws_iam_role" "ci" {
@@ -102,7 +96,7 @@ resource "aws_iam_role" "ci" {
       {
         Effect = "Allow"
         Principal = {
-          Federated = aws_iam_openid_connect_provider.github.arn
+          Federated = data.aws_iam_openid_connect_provider.github.arn
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {

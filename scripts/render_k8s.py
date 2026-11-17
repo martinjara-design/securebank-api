@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 TEMPLATE = (
-    ROOT / "k8s/hardened/deployment.hardened.yaml"
+    ROOT / "k8s/hardened/deployment.template.yaml"
 )
 
 PLACEHOLDER = (
