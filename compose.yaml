@@ -5,6 +5,8 @@ services:
       - "127.0.0.1:8080:8080"
     environment:
       SECUREBANK_JWT_SECRET: "${SECUREBANK_JWT_SECRET:?Debes definir SECUREBANK_JWT_SECRET}"
+      SECUREBANK_DEMO_ALICE_PASSWORD: "${SECUREBANK_DEMO_ALICE_PASSWORD:?Debes definir la clave de Alice}"
+      SECUREBANK_DEMO_BOB_PASSWORD: "${SECUREBANK_DEMO_BOB_PASSWORD:?Debes definir la clave de Bob}"
     read_only: true
     tmpfs:
       - /tmp
