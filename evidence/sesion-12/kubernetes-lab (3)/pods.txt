@@ -1,0 +1,4 @@
+NAME                              READY   STATUS    RESTARTS   AGE   IP               NODE                       NOMINATED NODE   READINESS GATES
+network-allowed                   1/1     Running   0          12s   192.168.12.199   securebank-control-plane   <none>           <none>
+network-denied                    1/1     Running   0          12s   192.168.12.198   securebank-control-plane   <none>           <none>
+securebank-api-5c458976b6-ntn2r   1/1     Running   0          18s   192.168.12.197   securebank-control-plane   <none>           <none>

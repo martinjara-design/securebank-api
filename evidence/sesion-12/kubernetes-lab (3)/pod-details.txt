@@ -1,0 +1,186 @@
+Name:             network-allowed
+Namespace:        securebank
+Priority:         0
+Service Account:  securebank-api
+Node:             securebank-control-plane/172.18.0.2
+Start Time:       Tue, 17 Nov 2026 07:31:52 +0000
+Labels:           access=securebank-api
+                  network-test=securebank
+Annotations:      cni.projectcalico.org/containerID: 30f971316ff0dd5486d2b52661c56b8243d545ebe64ef749911d2d0df87685d5
+                  cni.projectcalico.org/podIP: 192.168.12.199/32
+                  cni.projectcalico.org/podIPs: 192.168.12.199/32
+Status:           Running
+SeccompProfile:   RuntimeDefault
+IP:               192.168.12.199
+IPs:
+  IP:  192.168.12.199
+Containers:
+  client:
+    Container ID:  containerd://712f1f6902e5e781e751bb28eb3c76a9c99c0a6f686598e3f9b4f0bafda1fee2
+    Image:         localhost:5001/securebank-api@sha256:6884871956ec6eec4888c6ad091e44e578e9531e4443a0149cfe6789f108b84a
+    Image ID:      localhost:5001/securebank-api@sha256:6884871956ec6eec4888c6ad091e44e578e9531e4443a0149cfe6789f108b84a
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      python
+      -c
+      import time; time.sleep(600)
+    State:          Running
+      Started:      Tue, 17 Nov 2026 07:31:53 +0000
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     100m
+      memory:  64Mi
+    Requests:
+      cpu:        10m
+      memory:     32Mi
+    Environment:  <none>
+    Mounts:       <none>
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       True 
+  ContainersReady             True 
+  PodScheduled                True 
+Volumes:                      <none>
+QoS Class:                    Burstable
+Node-Selectors:               <none>
+Tolerations:                  node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                              node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  12s   default-scheduler  Successfully assigned securebank/network-allowed to securebank-control-plane
+  Normal  Pulling    11s   kubelet            Pulling image "localhost:5001/securebank-api@sha256:6884871956ec6eec4888c6ad091e44e578e9531e4443a0149cfe6789f108b84a"
+  Normal  Pulled     11s   kubelet            Successfully pulled image "localhost:5001/securebank-api@sha256:6884871956ec6eec4888c6ad091e44e578e9531e4443a0149cfe6789f108b84a" in 15ms (15ms including waiting). Image size: 50362066 bytes.
+  Normal  Created    11s   kubelet            Created container: client
+  Normal  Started    11s   kubelet            Started container client
+
+
+Name:             network-denied
+Namespace:        securebank
+Priority:         0
+Service Account:  securebank-api
+Node:             securebank-control-plane/172.18.0.2
+Start Time:       Tue, 17 Nov 2026 07:31:52 +0000
+Labels:           network-test=securebank
+Annotations:      cni.projectcalico.org/containerID: d89295e14ae00bf0509cf8b8fc09d11880d663b1adfe965398255b4ee2d962b5
+                  cni.projectcalico.org/podIP: 192.168.12.198/32
+                  cni.projectcalico.org/podIPs: 192.168.12.198/32
+Status:           Running
+SeccompProfile:   RuntimeDefault
+IP:               192.168.12.198
+IPs:
+  IP:  192.168.12.198
+Containers:
+  client:
+    Container ID:  containerd://cbb9313e6b6120d457d64ffcd694f0ca0d2e388de8d5caec64fe33dcd39c85ca
+    Image:         localhost:5001/securebank-api@sha256:6884871956ec6eec4888c6ad091e44e578e9531e4443a0149cfe6789f108b84a
+    Image ID:      localhost:5001/securebank-api@sha256:6884871956ec6eec4888c6ad091e44e578e9531e4443a0149cfe6789f108b84a
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      python
+      -c
+      import time; time.sleep(600)
+    State:          Running
+      Started:      Tue, 17 Nov 2026 07:31:53 +0000
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     100m
+      memory:  64Mi
+    Requests:
+      cpu:        10m
+      memory:     32Mi
+    Environment:  <none>
+    Mounts:       <none>
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       True 
+  ContainersReady             True 
+  PodScheduled                True 
+Volumes:                      <none>
+QoS Class:                    Burstable
+Node-Selectors:               <none>
+Tolerations:                  node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                              node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  12s   default-scheduler  Successfully assigned securebank/network-denied to securebank-control-plane
+  Normal  Pulling    11s   kubelet            Pulling image "localhost:5001/securebank-api@sha256:6884871956ec6eec4888c6ad091e44e578e9531e4443a0149cfe6789f108b84a"
+  Normal  Pulled     11s   kubelet            Successfully pulled image "localhost:5001/securebank-api@sha256:6884871956ec6eec4888c6ad091e44e578e9531e4443a0149cfe6789f108b84a" in 12ms (12ms including waiting). Image size: 50362066 bytes.
+  Normal  Created    11s   kubelet            Created container: client
+  Normal  Started    11s   kubelet            Started container client
+
+
+Name:             securebank-api-5c458976b6-ntn2r
+Namespace:        securebank
+Priority:         0
+Service Account:  securebank-api
+Node:             securebank-control-plane/172.18.0.2
+Start Time:       Tue, 17 Nov 2026 07:31:46 +0000
+Labels:           app=securebank-api
+                  pod-template-hash=5c458976b6
+Annotations:      cni.projectcalico.org/containerID: bca23ad271825d06a3c34f2afd781377515136f9d7ffb95e0336f5aed4028ac5
+                  cni.projectcalico.org/podIP: 192.168.12.197/32
+                  cni.projectcalico.org/podIPs: 192.168.12.197/32
+Status:           Running
+SeccompProfile:   RuntimeDefault
+IP:               192.168.12.197
+IPs:
+  IP:           192.168.12.197
+Controlled By:  ReplicaSet/securebank-api-5c458976b6
+Containers:
+  api:
+    Container ID:   containerd://6de1ef4855ac76d3efc1af2149ec4fd59f7b8cbe4b1f8e3d29c9051894646fa4
+    Image:          localhost:5001/securebank-api@sha256:6884871956ec6eec4888c6ad091e44e578e9531e4443a0149cfe6789f108b84a
+    Image ID:       localhost:5001/securebank-api@sha256:6884871956ec6eec4888c6ad091e44e578e9531e4443a0149cfe6789f108b84a
+    Port:           8080/TCP (http)
+    Host Port:      0/TCP (http)
+    State:          Running
+      Started:      Tue, 17 Nov 2026 07:31:48 +0000
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     500m
+      memory:  256Mi
+    Requests:
+      cpu:      100m
+      memory:   128Mi
+    Liveness:   http-get http://:http/health delay=0s timeout=2s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:http/health delay=0s timeout=2s period=5s #success=1 #failure=6
+    Startup:    http-get http://:http/health delay=0s timeout=2s period=2s #success=1 #failure=30
+    Environment:
+      SECUREBANK_JWT_SECRET:  <set to the key 'jwt-secret' in secret 'securebank-secrets'>  Optional: false
+    Mounts:
+      /tmp from temporary-files (rw)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       True 
+  ContainersReady             True 
+  PodScheduled                True 
+Volumes:
+  temporary-files:
+    Type:        EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:      Memory
+    SizeLimit:   64Mi
+QoS Class:       Burstable
+Node-Selectors:  <none>
+Tolerations:     node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                 node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  18s   default-scheduler  Successfully assigned securebank/securebank-api-5c458976b6-ntn2r to securebank-control-plane
+  Normal  Pulling    17s   kubelet            Pulling image "localhost:5001/securebank-api@sha256:6884871956ec6eec4888c6ad091e44e578e9531e4443a0149cfe6789f108b84a"
+  Normal  Pulled     16s   kubelet            Successfully pulled image "localhost:5001/securebank-api@sha256:6884871956ec6eec4888c6ad091e44e578e9531e4443a0149cfe6789f108b84a" in 1.446s (1.446s including waiting). Image size: 50362066 bytes.
+  Normal  Created    16s   kubelet            Created container: api
+  Normal  Started    16s   kubelet            Started container api

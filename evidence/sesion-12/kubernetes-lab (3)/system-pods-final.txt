@@ -1,0 +1,10 @@
+NAME                                               READY   STATUS    RESTARTS   AGE   IP               NODE                       NOMINATED NODE   READINESS GATES
+calico-kube-controllers-5766bdd7c-g2vfn            1/1     Running   0          60s   192.168.12.195   securebank-control-plane   <none>           <none>
+calico-node-bk2zw                                  1/1     Running   0          61s   172.18.0.2       securebank-control-plane   <none>           <none>
+coredns-66bc5c9577-bflg5                           1/1     Running   0          60s   192.168.12.193   securebank-control-plane   <none>           <none>
+coredns-66bc5c9577-hc2x5                           1/1     Running   0          60s   192.168.12.194   securebank-control-plane   <none>           <none>
+etcd-securebank-control-plane                      1/1     Running   0          68s   172.18.0.2       securebank-control-plane   <none>           <none>
+kube-apiserver-securebank-control-plane            1/1     Running   0          68s   172.18.0.2       securebank-control-plane   <none>           <none>
+kube-controller-manager-securebank-control-plane   1/1     Running   0          68s   172.18.0.2       securebank-control-plane   <none>           <none>
+kube-proxy-wpqjd                                   1/1     Running   0          61s   172.18.0.2       securebank-control-plane   <none>           <none>
+kube-scheduler-securebank-control-plane            1/1     Running   0          68s   172.18.0.2       securebank-control-plane   <none>           <none>
