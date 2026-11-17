@@ -15,10 +15,20 @@ permissions:
   contents: read
 
 jobs:
-  audit-before:
-    name: Auditoria inicial Terraform
+  audit:
+    name: Auditar Terraform ${{ matrix.stage }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        stage:
+          - before
+          - after
+
+    env:
+      STAGE: ${{ matrix.stage }}
 
     steps:
       - name: Descargar repositorio
@@ -33,38 +43,44 @@ jobs:
         run: pip install checkov==3.4.5
 
       - name: Registrar herramientas y fecha
+        shell: bash
         run: |
-          mkdir -p reports/iac/before
-          checkov --version > reports/iac/before/checkov-version.txt
-          date -u +"%Y-%m-%dT%H:%M:%SZ" \
-            > reports/iac/before/fecha.txt
+          mkdir -p "reports/iac/$STAGE"
 
-      - name: Analizar configuracion inicial
+          checkov --version \
+            > "reports/iac/$STAGE/checkov-version.txt"
+
+          date -u +"%Y-%m-%dT%H:%M:%SZ" \
+            > "reports/iac/$STAGE/fecha.txt"
+
+      - name: Analizar configuracion
         shell: bash
         run: |
           set +e
 
           checkov \
-            -d terraform/before \
+            -d "terraform/$STAGE" \
             --framework terraform \
             --skip-download \
             --output json \
-            > reports/iac/before/checkov.json \
-            2> reports/iac/before/checkov-errors.txt
+            > "reports/iac/$STAGE/checkov.json" \
+            2> "reports/iac/$STAGE/checkov-errors.txt"
 
           STATUS=$?
           set -e
 
-          echo "$STATUS" > reports/iac/before/exit-code.txt
+          echo "$STATUS" \
+            > "reports/iac/$STAGE/exit-code.txt"
 
-          # En la medicion inicial se esperan controles fallidos.
-          # Otros codigos de salida se consideran errores.
+          # Esta etapa mide ambas configuraciones.
+          # El codigo 1 puede representar controles fallidos.
+          # El siguiente paso verifica el reporte y el parseo.
           if [ "$STATUS" -ne 0 ] && [ "$STATUS" -ne 1 ]; then
-            cat reports/iac/before/checkov-errors.txt
+            cat "reports/iac/$STAGE/checkov-errors.txt"
             exit "$STATUS"
           fi
 
-      - name: Calcular Security Score inicial
+      - name: Calcular Security Score
         shell: bash
         run: |
           python - <<'PY'
@@ -72,7 +88,9 @@ jobs:
           import os
           from pathlib import Path
 
-          directory = Path("reports/iac/before")
+          stage = os.environ["STAGE"]
+          directory = Path("reports/iac") / stage
+
           report = json.loads(
               (directory / "checkov.json").read_text()
           )
@@ -88,25 +106,27 @@ jobs:
           passed = int(summary["passed"])
           failed = int(summary["failed"])
           skipped = int(summary["skipped"])
+          resources = int(summary["resource_count"])
           total = passed + failed
 
-          if total == 0:
-              raise SystemExit("No se evaluaron controles")
+          if total == 0 or resources == 0:
+              raise SystemExit("No se evaluaron recursos y controles")
 
           score = passed / total * 100
 
           text = (
-              "# Auditoria inicial Terraform\n\n"
+              f"# Auditoria Terraform: {stage}\n\n"
               "| Medicion | Resultado |\n"
               "|---|---:|\n"
+              f"| Recursos analizados | {resources} |\n"
               f"| Controles aprobados | {passed} |\n"
               f"| Controles fallidos | {failed} |\n"
               f"| Controles omitidos | {skipped} |\n"
               f"| Security Score | {score:.2f}% |\n\n"
               "Formula: passed / (passed + failed) * 100.\n\n"
               "Los controles omitidos se informan por separado.\n"
-              "Este resultado es la medicion inicial, "
-              "no una aprobacion para desplegar.\n"
+              "Este workflow mide resultados; "
+              "todavia no aplica el gate de aprobacion IaC.\n"
           )
 
           (directory / "summary.md").write_text(text)
@@ -117,11 +137,11 @@ jobs:
           print(text)
           PY
 
-      - name: Guardar evidencias iniciales
+      - name: Guardar evidencias
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: iac-before
-          path: reports/iac/before/
+          name: iac-${{ matrix.stage }}
+          path: reports/iac/${{ matrix.stage }}/
           retention-days: 14
           if-no-files-found: error
