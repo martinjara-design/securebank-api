@@ -170,7 +170,7 @@ resource "aws_db_instance" "postgres" {
 
   performance_insights_enabled          = true
   performance_insights_retention_period = 7
-  performance_insights_kms_key_id        = aws_kms_key.data.arn
+  performance_insights_kms_key_id       = aws_kms_key.data.arn
 
   depends_on = [
     aws_iam_role_policy_attachment.rds_monitoring,

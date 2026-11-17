@@ -22,6 +22,8 @@ spec:
       serviceAccountName: securebank-api
       automountServiceAccountToken: false
       enableServiceLinks: false
+      imagePullSecrets:
+        - name: ghcr-read
 
       securityContext:
         runAsNonRoot: true
@@ -34,8 +36,8 @@ spec:
       containers:
         - name: api
 
-          # El workflow sustituirá este marcador por un digest real.
-          image: localhost:5001/securebank-api@sha256:REPLACE_DIGEST
+          # Imagen de referencia publicada y verificada en la sesion 13.
+          image: ghcr.io/martinjara-design/securebank-api@sha256:7e1736dcb45a2e33b29c80fd2c23403f0f21e8c8685d2e904533ed6c45c5a837
           imagePullPolicy: Always
 
           ports:

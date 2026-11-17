@@ -7,19 +7,8 @@
       "check_id": "CKV_AWS_145",
       "resource": "aws_s3_bucket.logs",
       "reason": "El destino de server access logging de S3 utiliza SSE-S3 por compatibilidad con el servicio.",
-      "expires": "2026-12-17"
-    },
-    {
-      "check_id": "CKV_AWS_144",
-      "resource": "aws_s3_bucket.backups",
-      "reason": "La replicacion entre regiones queda fuera del alcance de este laboratorio estatico. Debe evaluarse antes de un despliegue real.",
-      "expires": "2026-12-17"
-    },
-    {
-      "check_id": "CKV_AWS_144",
-      "resource": "aws_s3_bucket.logs",
-      "reason": "La replicacion entre regiones queda fuera del alcance de este laboratorio estatico. Debe evaluarse antes de un despliegue real.",
-      "expires": "2026-12-17"
+      "expires": "2026-12-17",
+      "contextual_severity": "MEDIUM"
     }
   ]
 }

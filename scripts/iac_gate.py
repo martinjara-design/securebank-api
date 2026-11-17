@@ -14,7 +14,7 @@ def integer(value):
 
 
 def evaluate(report, policy):
-    if policy.get("scope") != "laboratorio-estatico-sin-despliegue":
+    if policy.get("scope") not in ("laboratorio-estatico-sin-despliegue", "aws-lab"):
         raise ValueError("Alcance de politica no permitido")
 
     minimum = policy["minimum_score"]
@@ -82,11 +82,35 @@ def evaluate(report, policy):
             )
 
     unexpected = []
+    severity_counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
+    classified = []
+    exceptions_by_pair = {(e["check_id"], e["resource"]): e for e in exceptions}
+
 
     for finding in results["failed_checks"]:
         pair = (finding["check_id"], finding["resource"])
 
-        if pair not in allowed:
+        exception = exceptions_by_pair.get(pair, {})
+        # Checkov OSS puede omitir severidad. Una excepcion no puede ocultar
+        # una severidad HIGH/CRITICAL proporcionada por el scanner.
+        scanner_severity = finding.get("severity")
+        if isinstance(scanner_severity, dict):
+            scanner_severity = scanner_severity.get("name")
+        if isinstance(scanner_severity, str):
+            scanner_severity = scanner_severity.upper()
+        contextual = exception.get("contextual_severity")
+        if contextual is not None and contextual not in ("LOW", "MEDIUM"):
+            raise ValueError("Solo se admiten excepciones contextuales LOW/MEDIUM")
+        severity = scanner_severity or contextual or (
+            "CRITICAL" if pair[0] in ("CKV_AWS_24", "CKV_AWS_20") else "HIGH"
+        )
+        if severity not in severity_counts:
+            raise ValueError("Severidad desconocida")
+        severity_counts[severity] += 1
+        classified.append({"check_id": pair[0], "resource": pair[1],
+                           "severity": severity,
+                           "source": "scanner" if scanner_severity else "politica-contextual-del-equipo"})
+        if pair not in allowed or severity in ("CRITICAL", "HIGH"):
             unexpected.append({
                 "check_id": pair[0],
                 "resource": pair[1],
@@ -110,10 +134,14 @@ def evaluate(report, policy):
         "scope": policy["scope"],
         "allow": not reasons,
         "score": round(score, 2),
+        "resources": resources,
         "passed": passed,
         "failed": failed,
         "skipped": skipped,
         "unexpected_failures": unexpected,
+        "severity_counts": severity_counts,
+        "classified_failures": classified,
+        "severity_note": "Clasificacion contextual del equipo cuando Checkov no proporciona severidad; no es una severidad oficial del scanner.",
         "deny": reasons,
     }
 

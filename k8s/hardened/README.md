@@ -109,3 +109,11 @@ hay que recrear el entorno y construir la imagen.
 Las pruebas de hardening no acreditan ausencia de CVE
 en la imagen. Firma y verificación de procedencia quedan
 pendientes para la sesión 13.
+
+## Corrección de cierre
+
+`deployment.hardened.yaml` contiene ahora un digest GHCR real de la prueba firmada de sesión 13, sin `REPLACE_DIGEST`. El marcador se conserva exclusivamente en `deployment.template.yaml`, usado por `scripts/render_k8s.py` para generar cada despliegue.
+
+Antes de aplicar manualmente, crear Namespace/ServiceAccount con `namespace.yaml`, el Secret `securebank-secrets` (clave `jwt-secret`) y, si GHCR es privado, el imagePullSecret `ghcr-read`. No versionar los valores de esos secretos. Después se puede aplicar `deployment.hardened.yaml`, Service y NetworkPolicy. El digest de referencia se firmó en la rama de sesión 13; una política que confía exclusivamente en main requiere el digest producido por el workflow en main, como hace automáticamente el nuevo flujo de despliegue.
+
+El workflow `supply-chain.yml` instala Kyverno y despliega exactamente el digest que acaba de verificar. La nueva evidencia de admission y rollout debe provenir de una ejecución real antes de dar por cerrada la corrección.
