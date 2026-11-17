@@ -1,0 +1,149 @@
+name: Docker Security - Sesion 10
+
+on:
+  push:
+    branches:
+      - feature/sesion-10-docker-security
+  pull_request:
+    branches:
+      - main
+    paths:
+      - docker/**
+      - .dockerignore
+      - requirements.txt
+      - .github/workflows/docker-security.yml
+
+permissions:
+  contents: read
+
+jobs:
+  compare-images:
+    name: Analizar imagen ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - version: v1
+            dockerfile: docker/Dockerfile.v1
+            tag: securebank:v1
+          - version: v2
+            dockerfile: docker/Dockerfile.v2
+            tag: securebank:v2-secure
+
+    env:
+      IMAGE: ${{ matrix.tag }}
+      OUTPUT: reports/docker/${{ matrix.version }}
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar evidencias
+        run: |
+          mkdir -p "$OUTPUT"
+          date -u +"%Y-%m-%dT%H:%M:%SZ" \
+            > "$OUTPUT/fecha.txt"
+
+      - name: Construir imagen
+        shell: bash
+        env:
+          DOCKERFILE: ${{ matrix.dockerfile }}
+        run: |
+          set -euo pipefail
+          docker build --pull --no-cache \
+            -f "$DOCKERFILE" \
+            -t "$IMAGE" . \
+            2>&1 | tee "$OUTPUT/build.log"
+
+      - name: Registrar propiedades e historial
+        run: |
+          docker image inspect "$IMAGE" \
+            > "$OUTPUT/image-inspect.json"
+
+          docker history --no-trunc "$IMAGE" \
+            > "$OUTPUT/image-history.txt"
+
+          docker run --rm --entrypoint id "$IMAGE" \
+            > "$OUTPUT/usuario.txt"
+
+          cat "$OUTPUT/usuario.txt"
+
+      - name: Verificar usuario de v2
+        if: matrix.version == 'v2'
+        shell: bash
+        run: |
+          UID_VALUE=$(docker run --rm \
+            --entrypoint id "$IMAGE" -u)
+
+          if [ "$UID_VALUE" != "10001" ]; then
+            echo "ERROR: v2 debe ejecutar con UID 10001"
+            exit 1
+          fi
+
+      - name: Levantar API con restricciones
+        shell: bash
+        run: |
+          export SECUREBANK_JWT_SECRET=$(openssl rand -hex 32)
+          echo "::add-mask::$SECUREBANK_JWT_SECRET"
+
+          docker run -d \
+            --name securebank-smoke \
+            --read-only \
+            --tmpfs /tmp:rw,noexec,nosuid,size=64m \
+            --cap-drop ALL \
+            --security-opt no-new-privileges:true \
+            -e SECUREBANK_JWT_SECRET \
+            -p 127.0.0.1:8080:8080 \
+            "$IMAGE"
+
+      - name: Comprobar funcionamiento
+        shell: bash
+        run: |
+          for intento in {1..30}; do
+            if curl --fail --silent --show-error \
+              http://127.0.0.1:8080/health \
+              -o "$OUTPUT/health.json"
+            then
+              cat "$OUTPUT/health.json"
+              exit 0
+            fi
+            sleep 2
+          done
+
+          docker logs securebank-smoke
+          exit 1
+
+      - name: Analizar vulnerabilidades y paquetes
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          scan-type: image
+          image-ref: ${{ matrix.tag }}
+          scanners: vuln
+          format: json
+          output: reports/docker/${{ matrix.version }}/trivy.json
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          ignore-unfixed: "false"
+          list-all-pkgs: "true"
+          exit-code: "0"
+
+      - name: Guardar logs del contenedor
+        if: always()
+        run: |
+          docker logs securebank-smoke \
+            > "$OUTPUT/container.log" 2>&1 || true
+
+      - name: Apagar contenedor
+        if: always()
+        run: docker rm -f securebank-smoke || true
+
+      - name: Guardar evidencias
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-security-${{ matrix.version }}
+          path: reports/docker/${{ matrix.version }}/
+          retention-days: 14
+          if-no-files-found: error

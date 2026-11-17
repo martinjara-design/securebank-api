@@ -1,0 +1,107 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.v2
+#1 transferring dockerfile: 524B done
+#1 DONE 0.0s
+
+#2 [auth] library/python:pull token for registry-1.docker.io
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.11-slim-bookworm
+#3 DONE 0.4s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 262B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 20.53kB done
+#5 DONE 0.0s
+
+#6 [1/6] FROM docker.io/library/python:3.11-slim-bookworm@sha256:a83ba18aef0f865b1a4a611c2cf460fe446f2795673bbb9fe43be570439e3b39
+#6 resolve docker.io/library/python:3.11-slim-bookworm@sha256:a83ba18aef0f865b1a4a611c2cf460fe446f2795673bbb9fe43be570439e3b39 0.0s done
+#6 sha256:4855ce9685bd81f7592de6c10e3a6b2362e86c0fd9ffe03001e028699b15cc2e 249B / 249B 0.0s done
+#6 sha256:f299daadc43c5ed23895e21e1c157957073ba706385b1bd6495df95cc9d4d823 3.34MB / 3.34MB 0.1s done
+#6 sha256:35c9163bf2bae2f9c986f7e1e1ea9ccd9c36cc0e216d96c0c14553fb8d61d9d2 16.03MB / 16.03MB 0.2s done
+#6 sha256:dd051e1b8c92ff101fa3071ab97ea4924885942f15644e01c3dc095764e863e3 28.25MB / 28.25MB 0.2s done
+#6 extracting sha256:dd051e1b8c92ff101fa3071ab97ea4924885942f15644e01c3dc095764e863e3
+#6 extracting sha256:dd051e1b8c92ff101fa3071ab97ea4924885942f15644e01c3dc095764e863e3 0.8s done
+#6 DONE 1.1s
+
+#6 [1/6] FROM docker.io/library/python:3.11-slim-bookworm@sha256:a83ba18aef0f865b1a4a611c2cf460fe446f2795673bbb9fe43be570439e3b39
+#6 extracting sha256:f299daadc43c5ed23895e21e1c157957073ba706385b1bd6495df95cc9d4d823 0.1s done
+#6 extracting sha256:35c9163bf2bae2f9c986f7e1e1ea9ccd9c36cc0e216d96c0c14553fb8d61d9d2
+#6 extracting sha256:35c9163bf2bae2f9c986f7e1e1ea9ccd9c36cc0e216d96c0c14553fb8d61d9d2 0.5s done
+#6 DONE 1.6s
+
+#6 [1/6] FROM docker.io/library/python:3.11-slim-bookworm@sha256:a83ba18aef0f865b1a4a611c2cf460fe446f2795673bbb9fe43be570439e3b39
+#6 extracting sha256:4855ce9685bd81f7592de6c10e3a6b2362e86c0fd9ffe03001e028699b15cc2e done
+#6 DONE 1.6s
+
+#7 [2/6] WORKDIR /app
+#7 DONE 0.1s
+
+#8 [3/6] RUN groupadd --gid 10001 appuser     && useradd --uid 10001 --gid 10001 --no-create-home appuser
+#8 DONE 0.2s
+
+#9 [4/6] COPY requirements.txt .
+#9 DONE 0.0s
+
+#10 [5/6] RUN pip install --no-cache-dir -r requirements.txt
+#10 1.455 Collecting Flask==3.1.3 (from -r requirements.txt (line 1))
+#10 1.709   Downloading flask-3.1.3-py3-none-any.whl.metadata (3.2 kB)
+#10 1.738 Collecting PyJWT==2.15.0 (from -r requirements.txt (line 2))
+#10 1.813   Downloading pyjwt-2.15.0-py3-none-any.whl.metadata (3.5 kB)
+#10 1.871 Collecting bcrypt==4.2.0 (from -r requirements.txt (line 3))
+#10 1.947   Downloading bcrypt-4.2.0-cp39-abi3-manylinux_2_28_x86_64.whl.metadata (9.6 kB)
+#10 2.026 Collecting MarkupSafe==2.1.5 (from -r requirements.txt (line 4))
+#10 2.103   Downloading MarkupSafe-2.1.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (3.0 kB)
+#10 2.135 Collecting gunicorn==27.0.1 (from -r requirements.txt (line 5))
+#10 2.211   Downloading gunicorn-27.0.1-py3-none-any.whl.metadata (5.6 kB)
+#10 2.237 Collecting blinker>=1.9.0 (from Flask==3.1.3->-r requirements.txt (line 1))
+#10 2.312   Downloading blinker-1.9.0-py3-none-any.whl.metadata (1.6 kB)
+#10 2.342 Collecting click>=8.1.3 (from Flask==3.1.3->-r requirements.txt (line 1))
+#10 2.417   Downloading click-8.5.1-py3-none-any.whl.metadata (2.6 kB)
+#10 2.438 Collecting itsdangerous>=2.2.0 (from Flask==3.1.3->-r requirements.txt (line 1))
+#10 2.513   Downloading itsdangerous-2.2.0-py3-none-any.whl.metadata (1.9 kB)
+#10 2.537 Collecting jinja2>=3.1.2 (from Flask==3.1.3->-r requirements.txt (line 1))
+#10 2.612   Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+#10 2.650 Collecting werkzeug>=3.1.0 (from Flask==3.1.3->-r requirements.txt (line 1))
+#10 2.725   Downloading werkzeug-3.1.9-py3-none-any.whl.metadata (4.1 kB)
+#10 2.830 Downloading flask-3.1.3-py3-none-any.whl (103 kB)
+#10 2.942    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 103.4/103.4 kB 959.8 kB/s eta 0:00:00
+#10 3.017 Downloading pyjwt-2.15.0-py3-none-any.whl (33 kB)
+#10 3.100 Downloading bcrypt-4.2.0-cp39-abi3-manylinux_2_28_x86_64.whl (273 kB)
+#10 3.199    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 273.8/273.8 kB 2.8 MB/s eta 0:00:00
+#10 3.276 Downloading MarkupSafe-2.1.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (28 kB)
+#10 3.353 Downloading gunicorn-27.0.1-py3-none-any.whl (263 kB)
+#10 3.376    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 263.7/263.7 kB 12.0 MB/s eta 0:00:00
+#10 3.451 Downloading blinker-1.9.0-py3-none-any.whl (8.5 kB)
+#10 3.527 Downloading click-8.5.1-py3-none-any.whl (126 kB)
+#10 3.534    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 126.2/126.2 kB 19.3 MB/s eta 0:00:00
+#10 3.610 Downloading itsdangerous-2.2.0-py3-none-any.whl (16 kB)
+#10 3.686 Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+#10 3.695    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 134.9/134.9 kB 16.8 MB/s eta 0:00:00
+#10 3.770 Downloading werkzeug-3.1.9-py3-none-any.whl (228 kB)
+#10 3.786    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 228.7/228.7 kB 15.3 MB/s eta 0:00:00
+#10 3.871 Installing collected packages: PyJWT, MarkupSafe, itsdangerous, gunicorn, click, blinker, bcrypt, werkzeug, jinja2, Flask
+#10 4.371 Successfully installed Flask-3.1.3 MarkupSafe-2.1.5 PyJWT-2.15.0 bcrypt-4.2.0 blinker-1.9.0 click-8.5.1 gunicorn-27.0.1 itsdangerous-2.2.0 jinja2-3.1.6 werkzeug-3.1.9
+#10 4.372 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+#10 4.535 
+#10 4.535 [notice] A new release of pip is available: 24.0 -> 26.3
+#10 4.535 [notice] To update, run: pip install --upgrade pip
+#10 DONE 4.6s
+
+#11 [6/6] COPY securebank_api/ ./securebank_api/
+#11 DONE 0.0s
+
+#12 exporting to image
+#12 exporting layers
+#12 exporting layers 0.4s done
+#12 exporting manifest sha256:ac7d2835f463bb0d95178dbc54952be2e08541ce6016e04449d0368e9073dea2 done
+#12 exporting config sha256:8369d66a92095c1fc4b7f8414270852dd28176c3a5a8c8a8d0e977d567f3da6e done
+#12 exporting attestation manifest sha256:bac1e94bef2cdf856c8337603651ba396b783e136db566d3f5e273fe498fbe65 done
+#12 exporting manifest list sha256:0d81b1d101e20099a7e05bffc53a56d82638479081354310969e046508728582 done
+#12 naming to docker.io/library/securebank:v2-secure done
+#12 unpacking to docker.io/library/securebank:v2-secure 0.1s done
+#12 DONE 0.5s
