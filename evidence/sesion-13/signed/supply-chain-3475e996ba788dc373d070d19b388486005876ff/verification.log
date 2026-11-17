@@ -1,0 +1,15 @@
+Verificando firma de la imagen...
+
+Verification for ghcr.io/martinjara-design/securebank-api@sha256:7e1736dcb45a2e33b29c80fd2c23403f0f21e8c8685d2e904533ed6c45c5a837 --
+The following checks were performed on each of these signatures:
+  - The cosign claims were validated
+  - Existence of the claims in the transparency log was verified offline
+  - The code-signing certificate was verified using trusted certificate authority certificates
+Verificando attestation CycloneDX del SBOM...
+
+Verification for ghcr.io/martinjara-design/securebank-api@sha256:7e1736dcb45a2e33b29c80fd2c23403f0f21e8c8685d2e904533ed6c45c5a837 --
+The following checks were performed on each of these signatures:
+  - The cosign claims were validated
+  - Existence of the claims in the transparency log was verified offline
+  - The code-signing certificate was verified using trusted certificate authority certificates
+PASS: firma y attestation SBOM verificadas para el digest indicado.
