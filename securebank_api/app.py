@@ -20,7 +20,7 @@ def create_app() -> Flask:
     app.register_blueprint(view.bp)
     app.register_blueprint(calc.bp)
 
-        @app.after_request
+    @app.after_request
     def set_security_headers(response):
         response.headers["Strict-Transport-Security"] = (
             "max-age=63072000; includeSubDomains"
@@ -38,7 +38,10 @@ def create_app() -> Flask:
 
     @app.get("/health")
     def health():
-        return jsonify({"status": "ok", "service": "securebank-api"}), 200
+        return jsonify({
+            "status": "ok",
+            "service": "securebank-api"
+        }), 200
 
     return app
 
