@@ -1,0 +1,78 @@
+name: DAST - Sesion 8
+
+on:
+  push:
+    branches:
+      - feature/sesion-08-dast
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  dast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Generar secreto temporal
+        run: |
+          SECRET=$(openssl rand -hex 32)
+          echo "::add-mask::$SECRET"
+          echo "SECUREBANK_JWT_SECRET=$SECRET" >> "$GITHUB_ENV"
+
+      - name: Construir y levantar API
+        run: docker compose up -d --build
+
+      - name: Esperar a que la API responda
+        run: |
+          for intento in {1..30}; do
+            if curl --fail --silent http://localhost:8080/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose logs
+          exit 1
+
+      - name: Preparar ZAP y registrar version
+        run: |
+          mkdir -p reports/dast
+          chmod 777 reports/dast
+          docker pull ghcr.io/zaproxy/zaproxy:stable
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > reports/dast/fecha.txt
+          docker image inspect \
+            --format '{{index .RepoDigests 0}}' \
+            ghcr.io/zaproxy/zaproxy:stable \
+            > reports/dast/imagen-zap.txt
+          docker run --rm ghcr.io/zaproxy/zaproxy:stable \
+            zap.sh -version > reports/dast/version-zap.txt
+
+      - name: Ejecutar ZAP Baseline
+        run: |
+          docker run --rm --network host \
+            -v "$PWD/reports/dast:/zap/wrk:rw" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+            -t "http://127.0.0.1:8080/welcome?name=DAST" \
+            -r report.html \
+            -J report.json \
+            -I
+
+      - name: Guardar reportes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-dast
+          path: reports/dast/
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Apagar entorno de pruebas
+        if: always()
+        run: docker compose down -v
