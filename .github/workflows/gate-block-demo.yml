@@ -1,0 +1,81 @@
+name: Demostracion de bloqueo OPA
+
+on:
+  push:
+    branches:
+      - feature/test-security-gate-block
+    paths:
+      - .github/workflows/gate-block-demo.yml
+      - policies/**
+
+permissions:
+  contents: read
+
+jobs:
+  security-gate:
+    name: Gate con entrada sintetica
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar entrada sintetica
+        shell: bash
+        run: |
+          mkdir -p demo-output
+
+          printf '%s\n' \
+            '{' \
+            '  "critical": 0,' \
+            '  "high": 0,' \
+            '  "medium": 0,' \
+            '  "secrets": 1,' \
+            '  "coverage": 88.03,' \
+            '  "internet_exposed": false,' \
+            '  "dast_high": 0' \
+            '}' > demo-output/input.json
+
+          echo "DEMOSTRACION: datos sinteticos, no hallazgos reales." \
+            > demo-output/README.txt
+
+      - name: Registrar decision de OPA
+        run: |
+          docker run --rm \
+            -v "$PWD:/work:ro" \
+            openpolicyagent/opa:1.0.0-static \
+            eval --format pretty \
+            -d /work/policies/security-policy-v1.rego \
+            -i /work/demo-output/input.json \
+            'data.securepipeline.gate' \
+            > demo-output/decision.txt
+
+          cat demo-output/decision.txt
+
+      - name: Exigir aprobacion del gate
+        run: |
+          docker run --rm \
+            -v "$PWD:/work:ro" \
+            openpolicyagent/opa:1.0.0-static \
+            eval --fail \
+            -d /work/policies/security-policy-v1.rego \
+            -i /work/demo-output/input.json \
+            'data.securepipeline.gate.allow == true'
+
+      - name: Guardar evidencia del bloqueo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demostracion-bloqueo-opa
+          path: demo-output/
+          retention-days: 14
+          if-no-files-found: error
+
+  package:
+    name: Package (demostracion)
+    needs: security-gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirmar permiso para empaquetar
+        run: echo "Este paso solo puede ejecutarse si OPA permite continuar."
