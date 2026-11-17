@@ -94,6 +94,40 @@ jobs:
             "$REFERENCE" \
             reports/k8s/deployment.hardened.yaml
 
+            - name: Analizar Deployment con Kubesec
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          docker run --rm -i \
+            kubesec/kubesec:v2.14.2 \
+            scan /dev/stdin \
+            < reports/k8s/deployment.hardened.yaml \
+            > reports/k8s/kubesec.json
+
+          cat reports/k8s/kubesec.json
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          results = json.loads(
+              Path("reports/k8s/kubesec.json").read_text()
+          )
+
+          if not isinstance(results, list) or not results:
+              raise SystemExit("Kubesec no devolvio resultados validos")
+
+          for result in results:
+              if result.get("valid") is not True:
+                  raise SystemExit("Kubesec considera invalido el manifiesto")
+
+              if result.get("score", -1) < 0:
+                  raise SystemExit("Kubesec detecto una puntuacion negativa")
+
+          print("PASS: manifiesto valido y sin puntuacion negativa")
+          PY
+
       - name: Crear Namespace e identidad
         run: kubectl apply -f k8s/hardened/namespace.yaml
 
