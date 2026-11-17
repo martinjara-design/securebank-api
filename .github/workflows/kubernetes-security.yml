@@ -11,6 +11,7 @@ on:
       - k8s/**
       - scripts/render_k8s.py
       - scripts/setup_k8s_lab.sh
+      - scripts/check_k8s_network.py
       - docker/Dockerfile.v2
       - requirements.txt
       - .github/workflows/kubernetes-security.yml
@@ -193,6 +194,14 @@ jobs:
           if not all(checks.values()):
               raise SystemExit("Fallo una comprobacion de hardening")
           PY
+
+      - name: Comprobar NetworkPolicy de entrada
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python scripts/check_k8s_network.py 2>&1 \
+            | tee reports/k8s/network-test.log
 
       - name: Guardar estado y diagnosticos
         if: always()
