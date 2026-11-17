@@ -1,0 +1,10 @@
+{
+  "uid_10001": true,
+  "gid_10001": true,
+  "serviceaccount_token_absent": true,
+  "effective_capabilities_zero": true,
+  "no_new_privileges": true,
+  "seccomp_filter_active": true,
+  "root_filesystem_readonly": true,
+  "tmp_writable": true
+}

@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: securebank-api-restricted
+  namespace: securebank
+
+spec:
+  podSelector:
+    matchLabels:
+      app: securebank-api
+
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              access: securebank-api
+      ports:
+        - protocol: TCP
+          port: 8080
+
+  egress: []

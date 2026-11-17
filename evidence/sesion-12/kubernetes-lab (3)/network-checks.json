@@ -1,0 +1,13 @@
+{
+  "target": "http://10.96.224.162:8080/health",
+  "checks": {
+    "authorized_client_http_200": true,
+    "unauthorized_client_timeout": true,
+    "authorized_client_still_reachable": true
+  },
+  "details": {
+    "allowed": "HTTP 200\n",
+    "denied": "Conexion agotada\ncommand terminated with exit code 75\n",
+    "repeated": "HTTP 200\n"
+  }
+}
