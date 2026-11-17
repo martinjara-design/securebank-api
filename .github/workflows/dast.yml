@@ -20,11 +20,28 @@ jobs:
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
-      - name: Generar secreto temporal
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Generar secretos temporales
+        shell: bash
         run: |
-          SECRET=$(openssl rand -hex 32)
-          echo "::add-mask::$SECRET"
-          echo "SECUREBANK_JWT_SECRET=$SECRET" >> "$GITHUB_ENV"
+          for VARIABLE in \
+            SECUREBANK_JWT_SECRET \
+            SECUREBANK_DEMO_ALICE_PASSWORD \
+            SECUREBANK_DEMO_BOB_PASSWORD
+          do
+            VALUE=$(openssl rand -hex 32)
+            echo "::add-mask::$VALUE"
+            echo "$VARIABLE=$VALUE" >> "$GITHUB_ENV"
+          done
+
+      - name: Preparar carpeta de evidencias
+        run: |
+          mkdir -p reports/dast
+          chmod 777 reports/dast
 
       - name: Construir y levantar API
         run: docker compose up -d --build
@@ -40,12 +57,18 @@ jobs:
           docker compose logs
           exit 1
 
+      - name: Comprobar autorizacion BOLA
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/bola_check.py 2>&1 \
+            | tee reports/dast/bola-results.txt
+
       - name: Preparar ZAP y registrar version
         run: |
-          mkdir -p reports/dast
-          chmod 777 reports/dast
           docker pull ghcr.io/zaproxy/zaproxy:stable
-          date -u +"%Y-%m-%dT%H:%M:%SZ" > reports/dast/fecha.txt
+          date -u +"%Y-%m-%dT%H:%M:%SZ" \
+            > reports/dast/fecha.txt
           docker image inspect \
             --format '{{index .RepoDigests 0}}' \
             ghcr.io/zaproxy/zaproxy:stable \
